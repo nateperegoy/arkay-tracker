@@ -3427,7 +3427,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 ) : (
                   <>
                     <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>How many screens?</p>
+                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>How many screens do you need to replace?</p>
                       <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} placeholder="0" />
                       <p className="font-body text-sm mt-1.5" style={{ color: COLORS.inkSoft }}>Standard screen width up to 35"</p>
                       <button type="button" onClick={() => setForm((f) => ({ ...f, hasOversizedScreens: !f.hasOversizedScreens }))} className="text-xs font-display uppercase tracking-wide underline mt-2" style={{ color: COLORS.slate }}>
