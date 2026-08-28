@@ -649,7 +649,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Customer Info</p>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Customer name</label>
-          <input type="text" autoFocus className={inputCls} style={inputStyle} value={form.customerName} onChange={set("customerName")} placeholder="Jane Miller" />
+          <input type="text" className={inputCls} style={inputStyle} value={form.customerName} onChange={set("customerName")} placeholder="Jane Miller" />
         </div>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Phone number</label>
@@ -2986,8 +2986,12 @@ function PricingSettings({ rates, onSave, onCancel }) {
 
 /* ---------------------------------- MODAL ---------------------------------- */
 function Modal({ title, onClose, children }) {
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, []);
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-4 pb-28 overflow-y-auto">
+    <div ref={scrollRef} className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-4 pb-28 overflow-y-auto">
       <div className="relative w-full max-w-md rounded-xl p-5 mt-6 mb-10" style={{ background: COLORS.canvas }}>
         <TagHole bg={COLORS.canvas} />
         <div className="flex items-center justify-between mb-4">
