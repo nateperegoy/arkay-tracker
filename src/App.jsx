@@ -3864,7 +3864,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     <div className="space-y-2.5">
                       <div className="flex items-start gap-2.5">
                         <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
-                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to your item(s) — it helps me keep everyone's items straight.</p>
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to one of your items — it helps me keep everyone's items straight.</p>
                       </div>
                       <div className="flex items-start gap-2.5">
                         <Clock size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
