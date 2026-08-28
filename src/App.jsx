@@ -3358,7 +3358,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           checked={form.needsMeasuringGuide}
                           onChange={(e) => setForm((f) => ({ ...f, needsMeasuringGuide: e.target.checked, needsCustomScreens: e.target.checked ? false : f.needsCustomScreens }))}
                         />
-                        I don't know my dimensions, send me a guide to help me measure
+                        I'm not sure what dimensions to give you. Send me a guide that walks me through the steps to take measurements.
                       </label>
                       <label className="flex items-center gap-2 text-sm font-body mt-3" style={{ color: COLORS.ink }}>
                         <input
