@@ -3934,7 +3934,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
 // CHANGE THIS to your own password before relying on it — this is a simple front-door deterrent
 // for casual visitors, not real security. Anyone determined enough to inspect the page's own
 // code could still find it, since there's no real server checking this, just this file itself.
-const DASHBOARD_PASSWORD = "arkay2026";
+const DASHBOARD_PASSWORD = "davethedog";
 
 function DashboardLogin({ onUnlock, onBack }) {
   const [password, setPassword] = useState("");
@@ -3986,7 +3986,7 @@ function LandingPage({ onChoose }) {
         <ChoiceCard selected={false} onClick={() => onChoose("estimate")} icon={Sparkles} label="Get an Estimate" sub="Curious what it might cost" />
         <ChoiceCard selected={false} onClick={() => onChoose("dropoff")} icon={Package} label="Drop Off an Item" sub="It's at the door or will be soon" />
       </div>
-      <button onClick={() => onChoose("tracker")} className="mt-10 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
+      <button onClick={() => onChoose("dashboard")} className="mt-10 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
         Business login
       </button>
       <div className="text-center mt-8">
