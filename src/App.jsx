@@ -3356,7 +3356,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     </div>
 
                     <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Build Me a New Window Screen</p>
+                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Need a New Window Screen Built?</p>
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                         <input
                           type="checkbox"
@@ -3488,7 +3488,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     </div>
 
                     <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Build Me a New Window Screen</p>
+                      <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Need a New Window Screen Built?</p>
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                         <input
                           type="checkbox"
