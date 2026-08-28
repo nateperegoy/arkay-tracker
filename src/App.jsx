@@ -3355,6 +3355,14 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                         <input
                           type="checkbox"
+                          checked={form.needsMeasuringGuide}
+                          onChange={(e) => setForm((f) => ({ ...f, needsMeasuringGuide: e.target.checked, needsCustomScreens: e.target.checked ? false : f.needsCustomScreens }))}
+                        />
+                        I don't know my dimensions, send me a guide to help me measure
+                      </label>
+                      <label className="flex items-center gap-2 text-sm font-body mt-3" style={{ color: COLORS.ink }}>
+                        <input
+                          type="checkbox"
                           checked={form.needsCustomScreens}
                           onChange={() => { if (!form.needsMeasuringGuide) toggleNeedsCustomScreens(); }}
                           disabled={form.needsMeasuringGuide}
@@ -3409,14 +3417,6 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           </button>
                         </div>
                       )}
-                      <label className="flex items-center gap-2 text-sm font-body mt-3" style={{ color: COLORS.ink }}>
-                        <input
-                          type="checkbox"
-                          checked={form.needsMeasuringGuide}
-                          onChange={(e) => setForm((f) => ({ ...f, needsMeasuringGuide: e.target.checked, needsCustomScreens: e.target.checked ? false : f.needsCustomScreens }))}
-                        />
-                        I don't know my dimensions, send me a guide to help me measure
-                      </label>
                     </div>
                   </>
                 ) : (
