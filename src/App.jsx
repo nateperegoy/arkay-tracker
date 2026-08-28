@@ -3806,10 +3806,6 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   )}
                 </div>
 
-                <p className="font-body text-xs italic" style={{ color: COLORS.inkSoft }}>
-                  Oversized screens or minor hardware (like corners, about $1 each) may add a little to the final price — we'll always confirm exact pricing before starting any work.
-                </p>
-
                 {error && <p className="text-sm font-body" style={{ color: COLORS.stamp }}>{error}</p>}
                 <div className="flex gap-3 pt-1">
                   <button onClick={goBack} className="rounded-xl px-4 py-3 border flex items-center gap-1" style={{ borderColor: COLORS.line, color: COLORS.inkSoft }}>
