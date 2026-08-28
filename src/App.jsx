@@ -3831,7 +3831,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 <h2 className="font-display text-xl uppercase tracking-wide" style={{ color: COLORS.ink }}>{firstName ? `Thanks, ${firstName}!` : "Thanks!"}</h2>
                 <p className="font-body text-sm mt-3" style={{ color: COLORS.inkSoft }}>
                   {form.requestType === "dropoff"
-                    ? `Thanks for stopping by! I'll turn it around in about ${rates.turnaroundDays === 1 ? "a day" : `${rates.turnaroundDays} days`}.`
+                    ? `Thanks for stopping by! I'll have your window and patio door screens ready for pickup in about ${rates.turnaroundDays === 1 ? "a day" : `${rates.turnaroundDays} days`} — new patio doors take about ${rates.patioTurnaroundDays} days.`
                     : `I'll review your details and follow up at ${form.phone || "the number you provided"} — screens usually take about ${rates.turnaroundDays} days, and patio doors take a bit longer.`}
                 </p>
                 {form.requestType === "dropoff" && (
