@@ -3455,7 +3455,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                         <div className="mt-3">
                           <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>How many feet of frame do you need to replace?</p>
                           <p className="font-body text-xs mt-1 mb-2" style={{ color: COLORS.inkSoft }}>
-                            Measure the bent side, round up to the nearest foot, and enter the total above.
+                            Measure the bent side, round up to the nearest foot, and enter the total above. Repeat for each side.
                           </p>
                           <input type="number" inputMode="decimal" min="0" step="1" className={inputCls} style={inputStyle} value={form.frameFeet} onChange={set("frameFeet")} />
                         </div>
