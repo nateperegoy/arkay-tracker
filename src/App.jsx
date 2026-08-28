@@ -3894,7 +3894,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
           <Phone size={14} color={COLORS.slate} />
           Questions? Call or text Nate at <a href="tel:7205775885" className="underline font-semibold" style={{ color: COLORS.slate }}>720-577-5885</a>
         </p>
-        <p className="font-body text-xs mt-1">
+        <p className="font-body text-sm mt-1" style={{ color: COLORS.inkSoft }}>
           <a href="https://arkaywindowscreens.com" className="underline" style={{ color: COLORS.slate }}>arkaywindowscreens.com</a>
         </p>
       </div>
@@ -3965,7 +3965,7 @@ function LandingPage({ onChoose }) {
           <Phone size={14} color={COLORS.slate} />
           Questions? Call or text Nate at <a href="tel:7205775885" className="underline font-semibold" style={{ color: COLORS.slate }}>720-577-5885</a>
         </p>
-        <p className="font-body text-xs mt-1" style={{ color: COLORS.inkSoft }}>
+        <p className="font-body text-sm mt-1" style={{ color: COLORS.inkSoft }}>
           <a href="https://arkaywindowscreens.com" className="underline" style={{ color: COLORS.slate }}>arkaywindowscreens.com</a>
         </p>
       </div>
