@@ -2986,12 +2986,8 @@ function PricingSettings({ rates, onSave, onCancel }) {
 
 /* ---------------------------------- MODAL ---------------------------------- */
 function Modal({ title, onClose, children }) {
-  const scrollRef = useRef(null);
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, []);
   return (
-    <div ref={scrollRef} className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-4 pb-28 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pb-28 overflow-y-auto">
       <div className="relative w-full max-w-md rounded-xl p-5 mt-6 mb-10" style={{ background: COLORS.canvas }}>
         <TagHole bg={COLORS.canvas} />
         <div className="flex items-center justify-between mb-4">
