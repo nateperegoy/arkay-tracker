@@ -3346,7 +3346,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Fix Part of My Frame</p>
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                         <input type="checkbox" checked={form.frameMightNeedReplacement} onChange={(e) => setForm((f) => ({ ...f, frameMightNeedReplacement: e.target.checked }))} />
-                        I might need some frame replaced
+                        Some of my frame is bent or damaged
                       </label>
                       {form.frameMightNeedReplacement && (
                         <p className="font-body text-sm mt-2" style={{ color: COLORS.inkSoft }}>
