@@ -3345,7 +3345,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       </label>
                       {form.frameMightNeedReplacement && (
                         <p className="font-body text-sm mt-2" style={{ color: COLORS.inkSoft }}>
-                          Sounds good. Leave it at the door. We'll take a close look and follow up.
+                          Sounds good. Leave it at the door. I'll take a close look and follow up.
                         </p>
                       )}
                     </div>
@@ -3625,7 +3625,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   {form.fullDoorReplacement && form.requestType === "estimate" && (
                     <div className="mt-3 space-y-3">
                       <p className="font-body text-xs italic" style={{ color: COLORS.inkSoft }}>
-                        Replacement doors are custom-built to your exact opening, so please measure as precisely as you can — we'll always confirm before ordering.
+                        Replacement doors are custom-built to your exact opening, so please measure as precisely as you can — I'll always confirm before ordering.
                       </p>
                       <div>
                         <label className={labelCls} style={{ color: COLORS.inkSoft }}>Exact outside width</label>
@@ -3726,7 +3726,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     {wantsFullDoor ? (fixedTotal > 0 ? `${formatWholeMoney(fixedTotal)} + $300–$350` : "$300 – $350") : formatWholeMoney(fixedTotal)}
                   </p>
                   <p className="font-body text-xs mt-2" style={{ color: COLORS.inkSoft }}>
-                    This is an <strong>estimate only</strong> — final pricing is confirmed once we see the job in person.
+                    This is a rough estimate — I'll confirm your exact price once I see everything in person.
                   </p>
                 </div>
 
