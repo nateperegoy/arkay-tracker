@@ -3332,7 +3332,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       )}
                       <label className="flex items-center gap-2 text-sm font-body mt-3" style={{ color: COLORS.ink }}>
                         <input type="checkbox" checked={form.hasOversizedScreens} onChange={(e) => setForm((f) => ({ ...f, hasOversizedScreens: e.target.checked }))} />
-                        Any of these larger than usual (over 35" wide)?
+                        Any of these wider than 35"?
                       </label>
                       {form.hasOversizedScreens && (
                         <div className="mt-3">
