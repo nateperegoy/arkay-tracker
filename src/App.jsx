@@ -3853,11 +3853,11 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   <CheckCircle2 size={30} color={COLORS.sage} />
                 </div>
                 <h2 className="font-display text-xl uppercase tracking-wide" style={{ color: COLORS.ink }}>{firstName ? `Thanks, ${firstName}!` : "Thanks!"}</h2>
-                <p className="font-body text-sm mt-3" style={{ color: COLORS.inkSoft }}>
-                  {form.requestType === "dropoff"
-                    ? `Thanks for stopping by! I'll have your window and patio door screens ready for pickup in about ${rates.turnaroundDays === 1 ? "a day" : `${rates.turnaroundDays} days`} — new patio doors take about ${rates.patioTurnaroundDays} days.`
-                    : `I'll review your details and follow up at ${form.phone || "the number you provided"} — screens usually take about ${rates.turnaroundDays} days, and patio doors take a bit longer.`}
-                </p>
+                {form.requestType === "estimate" && (
+                  <p className="font-body text-sm mt-3" style={{ color: COLORS.inkSoft }}>
+                    {`I'll review your details and follow up at ${form.phone || "the number you provided"} — screens usually take about ${rates.turnaroundDays} days, and patio doors take a bit longer.`}
+                  </p>
+                )}
                 {form.requestType === "dropoff" && (
                   <div className="rounded-2xl p-4 mt-4 text-left" style={{ background: COLORS.canvasDark }}>
                     <p className="font-display text-xs uppercase tracking-wide mb-2.5" style={{ color: COLORS.ink }}>A few things to know</p>
@@ -3865,6 +3865,10 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       <div className="flex items-start gap-2.5">
                         <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
                         <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to your item(s) — it helps me keep everyone's items straight.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Clock size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Turnaround for window and patio door screens is about {rates.turnaroundDays === 1 ? "a day" : `${rates.turnaroundDays} days`}. New patio doors take about {rates.patioTurnaroundDays} days.</p>
                       </div>
                       <div className="flex items-start gap-2.5">
                         <Banknote size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
