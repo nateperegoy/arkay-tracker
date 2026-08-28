@@ -3322,7 +3322,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           checked={form.isDroppingOffWindowScreen}
                           onChange={(e) => setForm((f) => ({ ...f, isDroppingOffWindowScreen: e.target.checked, numScreens: e.target.checked ? f.numScreens : "" }))}
                         />
-                        I am dropping off window screen
+                        I am dropping off window screens
                       </label>
                       {form.isDroppingOffWindowScreen && (
                         <div className="mt-3">
