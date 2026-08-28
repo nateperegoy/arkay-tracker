@@ -3249,7 +3249,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
   const cardStyle = { border: `1px solid ${COLORS.line}` };
   const inputCls = "w-full rounded-xl border px-4 py-3 text-base font-body bg-white";
   const inputStyle = { borderColor: COLORS.line, color: COLORS.ink };
-  const labelCls = "block text-xs font-display uppercase tracking-wide mb-1.5";
+  const labelCls = "block text-xs font-body font-semibold uppercase tracking-wide mb-1.5";
   const firstName = form.customerName.split(" ")[0] || "";
 
   return (
@@ -3365,7 +3365,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           {form.customScreenSets.map((s, i) => (
                             <div key={s.id} className="rounded-xl p-3 bg-white" style={{ border: `1px solid ${COLORS.line}` }}>
                               <div className="flex items-center justify-between mb-2">
-                                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Screen set {i + 1}</p>
+                                <p className="font-body text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Screen set {i + 1}</p>
                                 {form.customScreenSets.length > 1 && (
                                   <button type="button" onClick={() => removeCustomScreenSet(s.id)} aria-label="Remove this set">
                                     <X size={14} color={COLORS.stamp} />
@@ -3505,7 +3505,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           {form.customScreenSets.map((s, i) => (
                             <div key={s.id} className="rounded-xl p-3 bg-white" style={{ border: `1px solid ${COLORS.line}` }}>
                               <div className="flex items-center justify-between mb-2">
-                                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Screen set {i + 1}</p>
+                                <p className="font-body text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Screen set {i + 1}</p>
                                 {form.customScreenSets.length > 1 && (
                                   <button type="button" onClick={() => removeCustomScreenSet(s.id)} aria-label="Remove this set">
                                     <X size={14} color={COLORS.stamp} />
