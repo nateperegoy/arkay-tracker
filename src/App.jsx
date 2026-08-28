@@ -3886,8 +3886,14 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
         )}
       </div>
 
-      <div className="text-center pb-16 font-body text-xs" style={{ color: COLORS.inkSoft }}>
-        Questions? Call or text Nate at <a href="tel:7205775885" className="underline" style={{ color: COLORS.slate }}>720-577-5885</a> · <a href="https://arkaywindowscreens.com" className="underline" style={{ color: COLORS.slate }}>arkaywindowscreens.com</a>
+      <div className="text-center pb-16 pt-2" style={{ color: COLORS.inkSoft }}>
+        <p className="font-body text-sm flex items-center justify-center gap-1.5" style={{ color: COLORS.ink }}>
+          <Phone size={14} color={COLORS.slate} />
+          Questions? Call or text Nate at <a href="tel:7205775885" className="underline font-semibold" style={{ color: COLORS.slate }}>720-577-5885</a>
+        </p>
+        <p className="font-body text-xs mt-1">
+          <a href="https://arkaywindowscreens.com" className="underline" style={{ color: COLORS.slate }}>arkaywindowscreens.com</a>
+        </p>
       </div>
     </div>
   );
@@ -3951,6 +3957,15 @@ function LandingPage({ onChoose }) {
       <button onClick={() => onChoose("tracker")} className="mt-10 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
         Business login
       </button>
+      <div className="text-center mt-8">
+        <p className="font-body text-sm flex items-center justify-center gap-1.5" style={{ color: COLORS.ink }}>
+          <Phone size={14} color={COLORS.slate} />
+          Questions? Call or text Nate at <a href="tel:7205775885" className="underline font-semibold" style={{ color: COLORS.slate }}>720-577-5885</a>
+        </p>
+        <p className="font-body text-xs mt-1" style={{ color: COLORS.inkSoft }}>
+          <a href="https://arkaywindowscreens.com" className="underline" style={{ color: COLORS.slate }}>arkaywindowscreens.com</a>
+        </p>
+      </div>
     </div>
   );
 }
