@@ -3265,7 +3265,10 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
       <div className="max-w-lg mx-auto px-4 pt-8 pb-4 flex flex-col items-center w-full">
         <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-12 w-auto" />
         {form.requestType && (
-          <p className="font-display text-sm uppercase tracking-wide mt-3" style={{ color: COLORS.slate }}>
+          <p
+            className="font-display text-base uppercase tracking-wide mt-3 px-4 py-1.5 rounded-full"
+            style={{ color: COLORS.white, background: COLORS.slate }}
+          >
             {form.requestType === "dropoff" ? "Drop Off an Item" : "Get an Estimate"}
           </p>
         )}
