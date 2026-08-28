@@ -199,7 +199,9 @@ function getMissingExpenseMonths(monthlyExpenses) {
 function addDays(dateStr, days) {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + Number(days || 0));
-  return d.toISOString().slice(0, 10);
+  // Use the date's own local components rather than toISOString(), which converts to UTC
+  // and can shift the calendar date by a day depending on time of day and time zone offset.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // Shared timing/overdue logic used by the card, dashboard, and pickup tab.
@@ -223,7 +225,10 @@ function getOrderTiming(order, rates) {
 }
 
 /* ---------------------------------- HELPERS ---------------------------------- */
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Always returns "today" in Mountain Time specifically (America/Denver), regardless of what
+// time zone the device or server this code happens to be running on is set to — so dates stay
+// correct and consistent no matter where the app is opened from.
+const todayISO = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Denver", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 function formatDate(str) {
@@ -1568,6 +1573,7 @@ function TimeLogSection({ timeLogs, onSaveLog }) {
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
 function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync }) {
   const [viewingOrder, setViewingOrder] = useState(null);
+  const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [pendingExpenseAmount, setPendingExpenseAmount] = useState({});
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [taskOrderId, setTaskOrderId] = useState("");
@@ -1708,9 +1714,29 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       Import as order
                     </button>
                     {!isDropoff && (
-                      <button onClick={() => onDismiss(sub.id)} className="px-4 rounded-md border text-sm font-display uppercase tracking-wide" style={{ borderColor: COLORS.line, color: COLORS.stamp }}>
-                        Dismiss
-                      </button>
+                      confirmingDismissId === sub.id ? (
+                        <div className="flex-1 flex items-center gap-2">
+                          <span className="font-body text-xs flex-1" style={{ color: COLORS.stamp }}>Dismiss this request?</span>
+                          <button
+                            onClick={async () => { await onDismiss(sub.id); setConfirmingDismissId(null); }}
+                            className="px-3 py-2 rounded-md text-xs font-display uppercase tracking-wide text-white"
+                            style={{ background: COLORS.stamp }}
+                          >
+                            Yes, dismiss
+                          </button>
+                          <button
+                            onClick={() => setConfirmingDismissId(null)}
+                            className="px-3 py-2 rounded-md border text-xs font-display uppercase tracking-wide"
+                            style={{ borderColor: COLORS.line, color: COLORS.inkSoft }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmingDismissId(sub.id)} className="px-4 rounded-md border text-sm font-display uppercase tracking-wide" style={{ borderColor: COLORS.line, color: COLORS.stamp }}>
+                          Dismiss
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -3266,8 +3292,8 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
         <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-12 w-auto" />
         {form.requestType && (
           <p
-            className="font-display text-base uppercase tracking-wide mt-3 px-4 py-1.5 rounded-full"
-            style={{ color: COLORS.white, background: COLORS.slate }}
+            className="font-display text-sm uppercase tracking-wide mt-3"
+            style={{ color: COLORS.ink, borderBottom: `2px solid ${COLORS.sage}`, paddingBottom: 4 }}
           >
             {form.requestType === "dropoff" ? "Drop Off an Item" : "Get an Estimate"}
           </p>
@@ -3916,7 +3942,7 @@ function DashboardLogin({ onUnlock, onBack }) {
 
   const submit = async () => {
     if (password === DASHBOARD_PASSWORD) {
-      try { await window.storage.set("dashboard-trusted", "true", false); } catch (e) {}
+      try { localStorage.setItem("dashboard-trusted", "true"); } catch (e) {}
       onUnlock();
     } else {
       setError(true);
@@ -3980,15 +4006,25 @@ export default function AppRoot() {
   const [checkingTrust, setCheckingTrust] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const result = await window.storage.get("dashboard-trusted", false);
-        if (result && result.value === "true") setView("tracker");
-      } catch (e) {
-        // Not trusted yet — normal landing page.
+    try {
+      if (localStorage.getItem("dashboard-trusted") === "true") setView("tracker");
+    } catch (e) {
+      // Not trusted yet — normal landing page.
+    }
+    setCheckingTrust(false);
+  }, []);
+
+  // Prevents the browser's default behavior of changing a focused number input's value when
+  // scrolling with a mouse wheel or trackpad — applied once, globally, so every number field
+  // across the whole app is protected without needing to touch each one individually.
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (document.activeElement && document.activeElement.type === "number") {
+        e.preventDefault();
       }
-      setCheckingTrust(false);
-    })();
+    };
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
   }, []);
 
   if (checkingTrust) return null;
@@ -4259,8 +4295,8 @@ function InternalTracker() {
     persist([newOrder, ...orders]);
     persistSubmissions(submissions.filter((s) => s.id !== sub.id));
   };
-  const dismissSubmission = (id) => {
-    persistSubmissions(submissions.filter((s) => s.id !== id));
+  const dismissSubmission = async (id) => {
+    await persistSubmissions(submissions.filter((s) => s.id !== id));
   };
 
   const openNew = () => { setEditingOrder(null); setModalOpen(true); };
@@ -4276,6 +4312,7 @@ function InternalTracker() {
   const grouped = useMemo(() => {
     const g = Object.fromEntries(STATUSES.map((s) => [s.id, []]));
     orders.forEach((o) => { if (g[o.status]) g[o.status].push(o); });
+    Object.values(g).forEach((list) => list.sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0)));
     return g;
   }, [orders]);
 
@@ -4343,7 +4380,7 @@ function InternalTracker() {
               { label: "Complete", icon: CheckCheck, onClick: () => { setView("complete"); setMoreMenuOpen(false); } },
               { label: "Look up a customer", icon: Search, onClick: () => { setCustomerSearchOpen(true); setMoreMenuOpen(false); } },
               { label: "Shop settings", icon: Settings, onClick: () => { setPricingOpen(true); setMoreMenuOpen(false); } },
-              { label: "Forget this device", icon: Lock, onClick: async () => { try { await window.storage.delete("dashboard-trusted", false); } catch (e) {} window.location.reload(); } },
+              { label: "Forget this device", icon: Lock, onClick: () => { try { localStorage.removeItem("dashboard-trusted"); } catch (e) {} window.location.reload(); } },
             ].map((item) => (
               <button
                 key={item.label}
