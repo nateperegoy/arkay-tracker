@@ -1690,6 +1690,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     {sub.fullDoorReplacement && (
                       <p>Whole door replacement{fullDoorDims ? ` — outside ${fullDoorDims}` : sub.fullDoorOutsideDimensions ? ` — outside ${sub.fullDoorOutsideDimensions}` : ""}</p>
                     )}
+                    {sub.willBringOldPatioScreen && <p>Will bring the old patio door screen in for measuring</p>}
                     {sub.frameMightNeedReplacement && <p>Frame may need replacing</p>}
                     {sub.needsCustomScreens && sub.customScreenCount > 0 && (
                       <p>{sub.customScreenCount} custom-built screen(s) needed</p>
@@ -3059,6 +3060,8 @@ const emptyRequestForm = {
   patioScreenWidth: "",
   patioScreenHeight: "",
   fullDoorReplacement: false,
+  willBringOldPatioScreen: false,
+  knowsPatioDoorMeasurements: false,
   fullDoorOutsideDimensions: "",
   fullDoorWidthWhole: "",
   fullDoorWidthFraction: "0",
@@ -3184,6 +3187,8 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
       patioScreenHeight: form.patioScreenHeight,
       fullDoorReplacement: form.fullDoorReplacement,
       fullDoorOutsideDimensions: form.fullDoorOutsideDimensions,
+      willBringOldPatioScreen: form.willBringOldPatioScreen,
+      knowsPatioDoorMeasurements: form.knowsPatioDoorMeasurements,
       fullDoorWidthWhole: form.fullDoorWidthWhole,
       fullDoorWidthFraction: form.fullDoorWidthFraction,
       fullDoorHeightWhole: form.fullDoorHeightWhole,
@@ -3627,24 +3632,44 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                       <p className="font-body text-xs italic" style={{ color: COLORS.inkSoft }}>
                         Replacement doors are custom-built to your exact opening, so please measure as precisely as you can — I'll always confirm before ordering.
                       </p>
-                      <div>
-                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Exact outside width</label>
-                        <div className="flex items-center gap-2">
-                          <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.fullDoorWidthWhole} onChange={set("fullDoorWidthWhole")} placeholder="Inches" />
-                          <select className={inputCls} style={{ ...inputStyle, maxWidth: 110 }} value={form.fullDoorWidthFraction} onChange={set("fullDoorWidthFraction")}>
-                            {SIXTEENTHS.map((f) => <option key={f} value={f}>+ {f}"</option>)}
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Exact outside height</label>
-                        <div className="flex items-center gap-2">
-                          <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.fullDoorHeightWhole} onChange={set("fullDoorHeightWhole")} placeholder="Inches" />
-                          <select className={inputCls} style={{ ...inputStyle, maxWidth: 110 }} value={form.fullDoorHeightFraction} onChange={set("fullDoorHeightFraction")}>
-                            {SIXTEENTHS.map((f) => <option key={f} value={f}>+ {f}"</option>)}
-                          </select>
-                        </div>
-                      </div>
+                      <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
+                        <input
+                          type="checkbox"
+                          checked={form.willBringOldPatioScreen}
+                          onChange={(e) => setForm((f) => ({ ...f, willBringOldPatioScreen: e.target.checked, knowsPatioDoorMeasurements: e.target.checked ? false : f.knowsPatioDoorMeasurements }))}
+                        />
+                        I'll bring my old patio door screen to you for you to take measurements
+                      </label>
+                      <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
+                        <input
+                          type="checkbox"
+                          checked={form.knowsPatioDoorMeasurements}
+                          onChange={(e) => setForm((f) => ({ ...f, knowsPatioDoorMeasurements: e.target.checked, willBringOldPatioScreen: e.target.checked ? false : f.willBringOldPatioScreen }))}
+                        />
+                        I know my measurements. I'll put them below.
+                      </label>
+                      {form.knowsPatioDoorMeasurements && (
+                        <>
+                          <div>
+                            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Exact outside width</label>
+                            <div className="flex items-center gap-2">
+                              <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.fullDoorWidthWhole} onChange={set("fullDoorWidthWhole")} placeholder="Inches" />
+                              <select className={inputCls} style={{ ...inputStyle, maxWidth: 110 }} value={form.fullDoorWidthFraction} onChange={set("fullDoorWidthFraction")}>
+                                {SIXTEENTHS.map((f) => <option key={f} value={f}>+ {f}"</option>)}
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Exact outside height</label>
+                            <div className="flex items-center gap-2">
+                              <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.fullDoorHeightWhole} onChange={set("fullDoorHeightWhole")} placeholder="Inches" />
+                              <select className={inputCls} style={{ ...inputStyle, maxWidth: 110 }} value={form.fullDoorHeightFraction} onChange={set("fullDoorHeightFraction")}>
+                                {SIXTEENTHS.map((f) => <option key={f} value={f}>+ {f}"</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
