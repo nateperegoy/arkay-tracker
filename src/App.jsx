@@ -3330,16 +3330,6 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} placeholder="0" />
                         </div>
                       )}
-                      <label className="flex items-center gap-2 text-sm font-body mt-3" style={{ color: COLORS.ink }}>
-                        <input type="checkbox" checked={form.hasOversizedScreens} onChange={(e) => setForm((f) => ({ ...f, hasOversizedScreens: e.target.checked }))} />
-                        Any of these wider than 35"?
-                      </label>
-                      {form.hasOversizedScreens && (
-                        <div className="mt-3">
-                          <label className={labelCls} style={{ color: COLORS.inkSoft }}>How many?</label>
-                          <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.oversizedScreenCount} onChange={set("oversizedScreenCount")} placeholder="0" />
-                        </div>
-                      )}
                     </div>
 
                     <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
