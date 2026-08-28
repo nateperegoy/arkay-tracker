@@ -3579,7 +3579,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 <p className="font-body text-sm -mt-3" style={{ color: COLORS.inkSoft }}>Not getting any patio doors done? Just leave this blank and continue.</p>
 
                 <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Patio door screens</p>
+                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Need to replace a patio door screen?</p>
                   {form.requestType === "dropoff" ? (
                     <>
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
@@ -3616,7 +3616,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 </div>
 
                 <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Whole door replacement</p>
+                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Need a new patio door?</p>
                   <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                     <input type="checkbox" checked={form.fullDoorReplacement} onChange={(e) => setForm((f) => ({ ...f, fullDoorReplacement: e.target.checked }))} />
                     I need an entire patio door replaced (not just the screen)
@@ -3675,7 +3675,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 </div>
 
                 <div className="rounded-2xl p-4" style={{ background: COLORS.canvasDark }}>
-                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Hardware</p>
+                  <p className="font-display text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>Need new hardware?</p>
                   <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                     <input type="checkbox" checked={form.patioNeedsHardware} onChange={(e) => setForm((f) => ({ ...f, patioNeedsHardware: e.target.checked }))} />
                     I need new hardware (rollers, etc.)
