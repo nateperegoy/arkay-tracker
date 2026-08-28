@@ -37,6 +37,7 @@ import {
   Layers,
   Settings,
   Lock,
+  Tag,
   Unlock,
   MessageCircle,
   Banknote,
@@ -3836,12 +3837,21 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                 </p>
                 {form.requestType === "dropoff" && (
                   <div className="rounded-2xl p-4 mt-4 text-left" style={{ background: COLORS.canvasDark }}>
-                    <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.ink }}>A few things to know</p>
-                    <ul className="font-body text-sm space-y-1.5" style={{ color: COLORS.inkSoft }}>
-                      <li>• Tape your name and number to your item(s) — it helps me keep track of whose is whose.</li>
-                      <li>• Payment is due at pickup — cash is preferred.</li>
-                      <li>• If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.</li>
-                    </ul>
+                    <p className="font-display text-xs uppercase tracking-wide mb-2.5" style={{ color: COLORS.ink }}>A few things to know</p>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to your item(s) — it helps me keep track of whose is whose.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Banknote size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Payment is due at pickup — cash is preferred.</p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Lock size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.</p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <p className="font-body text-sm mt-3" style={{ color: COLORS.ink }}>
