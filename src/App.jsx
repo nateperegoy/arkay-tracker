@@ -1690,7 +1690,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     {sub.fullDoorReplacement && (
                       <p>Whole door replacement{fullDoorDims ? ` — outside ${fullDoorDims}` : sub.fullDoorOutsideDimensions ? ` — outside ${sub.fullDoorOutsideDimensions}` : ""}</p>
                     )}
-                    {sub.willBringOldPatioScreen && <p>Will bring the old patio door screen in for measuring</p>}
+                    {sub.willBringOldPatioScreen && <p>Will bring the old patio door in for measuring</p>}
                     {sub.frameMightNeedReplacement && <p>Frame may need replacing</p>}
                     {sub.needsCustomScreens && sub.customScreenCount > 0 && (
                       <p>{sub.customScreenCount} custom-built screen(s) needed</p>
@@ -3638,7 +3638,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                           checked={form.willBringOldPatioScreen}
                           onChange={(e) => setForm((f) => ({ ...f, willBringOldPatioScreen: e.target.checked, knowsPatioDoorMeasurements: e.target.checked ? false : f.knowsPatioDoorMeasurements }))}
                         />
-                        I'll bring my old patio door screen to you for you to take measurements
+                        I'll bring my old patio door to you for you to take measurements
                       </label>
                       <label className="flex items-center gap-2 text-sm font-body" style={{ color: COLORS.ink }}>
                         <input
