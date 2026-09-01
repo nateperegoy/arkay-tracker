@@ -273,6 +273,62 @@ function voiceLink(raw) {
   return "https://voice.google.com/u/0/messages";
 }
 
+function voiceCallLink(raw) {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `https://voice.google.com/u/0/calls?a=nc,+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `https://voice.google.com/u/0/calls?a=nc,+${digits}`;
+  }
+  return "https://voice.google.com/u/0/calls";
+}
+
+// Tapping a phone number opens this instead of dialing directly — lets Nate pick call or
+// text, both via Google Voice specifically, rather than the device's default phone app.
+function PhoneLink({ phone, className }) {
+  const [open, setOpen] = useState(false);
+  const display = formatPhone(phone) || "—";
+  if (!phone) return <span className={className}>{display}</span>;
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className={className} style={{ color: COLORS.slate }}>
+        {display}
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(false)}>
+          <div className="rounded-xl p-4 max-w-xs w-full bg-white" onClick={(e) => e.stopPropagation()} style={{ border: `1px solid ${COLORS.line}` }}>
+            <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>{display}</p>
+            <a
+              href={voiceCallLink(phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 justify-center rounded-md py-2.5 mb-2 text-sm font-display uppercase tracking-wide text-white"
+              style={{ background: COLORS.slate }}
+            >
+              <Phone size={16} /> Call via Google Voice
+            </a>
+            <a
+              href={voiceLink(phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 justify-center rounded-md py-2.5 border text-sm font-display uppercase tracking-wide"
+              style={{ borderColor: COLORS.line, color: COLORS.ink }}
+            >
+              <MessageCircle size={16} /> Text via Google Voice
+            </a>
+            <button onClick={() => setOpen(false)} className="w-full text-center mt-3 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function daysBetween(a, b) {
   const d1 = new Date(a + "T00:00:00");
   const d2 = new Date(b + "T00:00:00");
@@ -1031,9 +1087,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
         <div className="flex items-center justify-between">
           <div>
             <p className="font-display text-base" style={{ color: COLORS.ink }}>{order.customerName}</p>
-            <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-sm underline" style={{ color: COLORS.slate }}>
-              {formatPhone(order.phone) || "—"}
-            </a>
+            <PhoneLink phone={order.phone} className="font-body text-sm underline" />
             {repeatCount > 0 && onLookupCustomer && (
               <button
                 onClick={() => onLookupCustomer(order.customerName || order.phone)}
@@ -1181,9 +1235,10 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-base truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-          <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-sm flex items-center gap-1.5" style={{ color: COLORS.slate }}>
-            <Phone size={12} /> {formatPhone(order.phone) || "—"}
-          </a>
+          <div className="flex items-center gap-1.5">
+            <Phone size={12} color={COLORS.slate} />
+            <PhoneLink phone={order.phone} className="font-body text-sm" />
+          </div>
           {order.status !== "picked_up" && showDue && (
             isOverdue ? (
               <span className="inline-block mt-1.5 text-xs font-display uppercase tracking-wide rounded-full px-2 py-0.5 text-white" style={{ background: COLORS.stamp }}>
@@ -1321,9 +1376,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
         <div className="flex-1 min-w-[140px]">
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-          <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-            {formatPhone(order.phone) || "—"}
-          </a>
+          <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
         <CategoryIcons order={order} />
         <div className="text-xs font-body text-right" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
@@ -1656,9 +1709,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         </span>
                       </div>
                       <p className="font-display text-base truncate" style={{ color: COLORS.ink }}>{sub.customerName}</p>
-                      <a href={voiceLink(sub.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-sm underline" style={{ color: COLORS.slate }}>
-                        {formatPhone(sub.phone) || "—"}
-                      </a>
+                      <PhoneLink phone={sub.phone} className="font-body text-sm underline" />
                       {sub.email && <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{sub.email}</p>}
                     </div>
                     <span className="font-body text-xs shrink-0" style={{ color: COLORS.inkSoft }}>{formatDate(sub.submittedDate)}</span>
@@ -1754,9 +1805,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <div className="flex-1 min-w-[140px]">
                       <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                      <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-                        {formatPhone(order.phone) || "—"}
-                      </a>
+                      <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                     </div>
                     {readyToClose ? (
                       <span className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: TASK_TAGS.readyToClose.soft, color: TASK_TAGS.readyToClose.color }}>
@@ -1910,9 +1959,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       })}
                       <div className="flex-1 min-w-[100px]">
                         <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                        <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-                          {formatPhone(order.phone) || "—"}
-                        </a>
+                        <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                       </div>
                       {order.fullPatioReplacement ? (
                         <select
@@ -1939,9 +1986,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     </span>
                     <div className="flex-1 min-w-[100px]">
                       <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                      <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-                        {formatPhone(order.phone) || "—"}
-                      </a>
+                      <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                     </div>
                     <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{getMissingDetails(order).join(", ")}</span>
                     <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
@@ -2070,9 +2115,7 @@ function CompletePanel({ orders, onEdit, onDelete, onStatusChange, rates, onLook
                     <div key={order.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line }}>
                       <div className="flex-1 min-w-[140px]">
                         <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                        <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-                          {formatPhone(order.phone) || "—"}
-                        </a>
+                        <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                       </div>
                       {repeatCount > 1 && (
                         <button
@@ -2116,9 +2159,7 @@ function PickupPanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookup
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line }}>
         <div className="flex-1 min-w-[140px]">
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-          <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-            {formatPhone(order.phone) || "—"}
-          </a>
+          <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
         <div className="text-xs font-body text-right" style={{ color: order.pickupDate ? COLORS.ink : COLORS.inkSoft }}>
           {order.pickupDate ? `Picking up ${formatDate(order.pickupDate)}` : "No pickup date set"}
@@ -4544,9 +4585,7 @@ function InternalTracker() {
                       <div key={order.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 border-b" style={{ borderColor: COLORS.line }}>
                         <div className="flex-1 min-w-[140px]">
                           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                          <a href={voiceLink(order.phone)} target="_blank" rel="noopener noreferrer" className="font-body text-xs underline" style={{ color: COLORS.slate }}>
-                            {formatPhone(order.phone) || "—"}
-                          </a>
+                          <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                         </div>
                         <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(order.dropOffDate)}</span>
                         <span className="font-display text-xs uppercase rounded-full px-2 py-0.5" style={{ background: s.soft, color: s.color }}>{s.label}</span>
