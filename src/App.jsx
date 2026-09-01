@@ -1426,9 +1426,6 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
               </div>
             ))}
           </div>
-          <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
-            Oldest orders first. This is a fresh suggestion each time — it doesn't track partial progress night to night, so leave an order's status as-is until it's fully done.
-          </p>
         </div>
       )}
 
@@ -4259,25 +4256,13 @@ function InternalTracker() {
   // sync is a best-effort add-on, never a blocker for the tracker's own task list.
   const syncTaskToTodoist = async (taskId, description, dueDate) => {
     try {
-      const dueText = dueDate ? ` Set the due date to ${dueDate}.` : "";
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/todoist-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: `Add a task to my Todoist account with the exact title "${description}". It must go in my project named "Screens" (may show as #screens or #Screens) — find that project first if you need its ID, then create the task in it.${dueText} Reply with just "done" once created.`,
-            },
-          ],
-          mcp_servers: [{ type: "url", url: "https://ai.todoist.net/mcp", name: "todoist-mcp" }],
-        }),
+        body: JSON.stringify({ description, dueDate }),
       });
-      const data = await response.json();
-      const usedTool = Array.isArray(data.content) && data.content.some((b) => b.type === "mcp_tool_use");
-      setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: response.ok && usedTool ? "synced" : "failed" } : t)));
+      const data = await response.json().catch(() => ({}));
+      setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: response.ok && data.success ? "synced" : "failed" } : t)));
     } catch (e) {
       setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: "failed" } : t)));
     }
