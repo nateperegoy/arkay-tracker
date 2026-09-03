@@ -354,6 +354,11 @@ function reportAnchorDate(order) {
 
 const BUSINESS_ADDRESS = "514 E. Irish Ave, Littleton, CO 80122";
 
+// Update these two once you have the actual links — Google: Business Profile → "Ask for reviews"
+// → copy link. Facebook: your Page → Reviews tab → copy the page URL.
+const GOOGLE_REVIEW_LINK = "https://g.page/r/PLACEHOLDER/review";
+const FACEBOOK_REVIEW_LINK = "https://facebook.com/PLACEHOLDER";
+
 // Builds a standard .ics calendar file for a scheduled pickup, as an all-day event on the
 // pickup date. iOS Safari recognizes the text/calendar MIME type on a data URI and hands it
 // directly to the native Calendar app's "Add Event" screen — no separate app or download step.
@@ -1829,10 +1834,25 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       {order.pickupDate ? `Picked up ${formatDate(order.pickupDate)}` : "No pickup date"}
                     </span>
                     <button
-                      onClick={() => onToggleReview(order.id)}
+                      onClick={async () => {
+                        if (order.reviewRequestSent) {
+                          onToggleReview(order.id);
+                          return;
+                        }
+                        const firstName = (order.customerName || "").split(" ")[0] || "there";
+                        const message = `Hi ${firstName}, thanks again for choosing Arkay Window Screens! If you have a minute, I'd really appreciate a review — Google: ${GOOGLE_REVIEW_LINK} or Facebook: ${FACEBOOK_REVIEW_LINK}`;
+                        try {
+                          await navigator.clipboard.writeText(message);
+                        } catch (e) {
+                          // Clipboard access can fail (permissions, older browsers) — Google Voice
+                          // still opens either way, just without the message pre-copied.
+                        }
+                        window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                        onToggleReview(order.id);
+                      }}
                       className="p-1 rounded hover:bg-black/5"
-                      aria-label={order.reviewRequestSent ? "Review request sent" : "Mark review request sent"}
-                      title={order.reviewRequestSent ? "Review request sent" : "Send review request?"}
+                      aria-label={order.reviewRequestSent ? "Review request sent" : "Copy review message and open Google Voice"}
+                      title={order.reviewRequestSent ? "Review request sent — click to undo" : "Copy review message and open Google Voice"}
                     >
                       <MessageCircle size={15} color={order.reviewRequestSent ? COLORS.slate : COLORS.line} fill={order.reviewRequestSent ? COLORS.slate : "none"} />
                     </button>
