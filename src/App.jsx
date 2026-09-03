@@ -1806,12 +1806,8 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
               const s = statusById[order.status] || STATUSES[0];
               const readyToClose = order.paymentMethod && order.pickupDate && order.reviewRequestSent;
               return (
-                <div key={order.id} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <div className="flex-1 min-w-[140px]">
-                      <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                      <PhoneLink phone={order.phone} className="font-body text-xs underline" />
-                    </div>
+                <div key={order.id} className="rounded-xl border bg-white p-3 space-y-2" style={{ borderColor: COLORS.line }}>
+                  <div className="flex flex-wrap gap-1.5">
                     {readyToClose ? (
                       <span className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: TASK_TAGS.readyToClose.soft, color: TASK_TAGS.readyToClose.color }}>
                         {TASK_TAGS.readyToClose.label}
@@ -1830,67 +1826,20 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         )}
                       </>
                     )}
+                  </div>
+                  <div>
+                    <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+                    <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
                     <span className="font-body text-xs rounded-full px-2 py-0.5" style={{ background: order.paymentMethod ? COLORS.canvasDark : "#F5E7E3", color: order.paymentMethod ? COLORS.inkSoft : COLORS.stamp }}>
                       {order.paymentMethod ? paymentLabel(order.paymentMethod) : "No payment recorded"}
                     </span>
                     <span className="font-body text-xs rounded-full px-2 py-0.5" style={{ background: order.pickupDate ? COLORS.canvasDark : "#F5E7E3", color: order.pickupDate ? COLORS.inkSoft : COLORS.stamp }}>
                       {order.pickupDate ? `Picked up ${formatDate(order.pickupDate)}` : "No pickup date"}
                     </span>
-                    <div className="relative">
-                      <button
-                        onClick={() => {
-                          if (order.reviewRequestSent) {
-                            onToggleReview(order.id);
-                            return;
-                          }
-                          setReviewMenuOrderId(order.id);
-                        }}
-                        className="p-1 rounded hover:bg-black/5"
-                        aria-label={order.reviewRequestSent ? "Review request sent" : "Send review request"}
-                        title={order.reviewRequestSent ? "Review request sent — click to undo" : "Send review request"}
-                      >
-                        <MessageCircle size={15} color={order.reviewRequestSent ? COLORS.slate : COLORS.line} fill={order.reviewRequestSent ? COLORS.slate : "none"} />
-                      </button>
-                      {reviewMenuOrderId === order.id && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReviewMenuOrderId(null)}>
-                          <div className="rounded-xl p-4 max-w-xs w-full bg-white" onClick={(e) => e.stopPropagation()} style={{ border: `1px solid ${COLORS.line}` }}>
-                            <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>Which message fits?</p>
-                            <button
-                              onClick={async () => {
-                                const message = `Thanks, that would be great — I really appreciate it.\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
-                                try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
-                                onToggleReview(order.id);
-                                setReviewMenuOrderId(null);
-                              }}
-                              className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
-                              style={{ background: COLORS.canvasDark, color: COLORS.ink }}
-                            >
-                              They already said yes
-                              <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>Reply after they've agreed to leave one</span>
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const firstName = (order.customerName || "").split(" ")[0] || "there";
-                                const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
-                                try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
-                                onToggleReview(order.id);
-                                setReviewMenuOrderId(null);
-                              }}
-                              className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
-                              style={{ background: COLORS.canvasDark, color: COLORS.ink }}
-                            >
-                              Ask for the first time
-                              <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>They haven't been asked yet</span>
-                            </button>
-                            <button onClick={() => setReviewMenuOrderId(null)} className="w-full text-center font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
                     <select
                       value={order.status}
                       onChange={(e) => onOrderStatusChange(order.id, e.target.value)}
@@ -1899,9 +1848,66 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     >
                       {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
                     </select>
-                    <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
-                      <Eye size={14} color={COLORS.inkSoft} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <div className="relative">
+                        <button
+                          onClick={() => {
+                            if (order.reviewRequestSent) {
+                              onToggleReview(order.id);
+                              return;
+                            }
+                            setReviewMenuOrderId(order.id);
+                          }}
+                          className="p-1 rounded hover:bg-black/5"
+                          aria-label={order.reviewRequestSent ? "Review request sent" : "Send review request"}
+                          title={order.reviewRequestSent ? "Review request sent — click to undo" : "Send review request"}
+                        >
+                          <MessageCircle size={15} color={order.reviewRequestSent ? COLORS.slate : COLORS.line} fill={order.reviewRequestSent ? COLORS.slate : "none"} />
+                        </button>
+                        {reviewMenuOrderId === order.id && (
+                          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReviewMenuOrderId(null)}>
+                            <div className="rounded-xl p-4 max-w-xs w-full bg-white" onClick={(e) => e.stopPropagation()} style={{ border: `1px solid ${COLORS.line}` }}>
+                              <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>Which message fits?</p>
+                              <button
+                                onClick={async () => {
+                                  const message = `Thanks, that would be great — I really appreciate it.\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
+                                  try { await navigator.clipboard.writeText(message); } catch (e) {}
+                                  window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                  onToggleReview(order.id);
+                                  setReviewMenuOrderId(null);
+                                }}
+                                className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
+                                style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                              >
+                                They already said yes
+                                <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>Reply after they've agreed to leave one</span>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  const firstName = (order.customerName || "").split(" ")[0] || "there";
+                                  const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
+                                  try { await navigator.clipboard.writeText(message); } catch (e) {}
+                                  window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                  onToggleReview(order.id);
+                                  setReviewMenuOrderId(null);
+                                }}
+                                className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
+                                style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                              >
+                                Ask for the first time
+                                <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>They haven't been asked yet</span>
+                              </button>
+                              <button onClick={() => setReviewMenuOrderId(null)} className="w-full text-center font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
+                        <Eye size={14} color={COLORS.inkSoft} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -2013,34 +2019,38 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                   const reasons = getActionReasons(order, todayISO());
                   const ms = metroStatusById[order.metroStatus] || METRO_STATUSES[0];
                   return (
-                    <div key={order.id} className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
-                      {reasons.map((r, i) => {
-                        const tag = tagForActionReason(r);
-                        return (
-                          <span key={i} className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: tag.soft, color: tag.color }}>
-                            {tag.label}
-                          </span>
-                        );
-                      })}
-                      <div className="flex-1 min-w-[100px]">
+                    <div key={order.id} className="rounded-xl border bg-white p-3 space-y-2" style={{ borderColor: COLORS.line }}>
+                      <div className="flex flex-wrap gap-1.5">
+                        {reasons.map((r, i) => {
+                          const tag = tagForActionReason(r);
+                          return (
+                            <span key={i} className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: tag.soft, color: tag.color }}>
+                              {tag.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                      <div>
                         <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
                         <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                       </div>
-                      {order.fullPatioReplacement ? (
-                        <select
-                          value={order.metroStatus || "ordered"}
-                          onChange={(e) => onMetroStatusChange(order.id, e.target.value)}
-                          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
-                          style={{ background: ms.soft, color: ms.color }}
-                        >
-                          {METRO_STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
-                        </select>
-                      ) : (
-                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{reasons.join(", ")}</span>
-                      )}
-                      <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
-                        <Eye size={14} color={COLORS.inkSoft} />
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        {order.fullPatioReplacement ? (
+                          <select
+                            value={order.metroStatus || "ordered"}
+                            onChange={(e) => onMetroStatusChange(order.id, e.target.value)}
+                            className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+                            style={{ background: ms.soft, color: ms.color }}
+                          >
+                            {METRO_STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
+                          </select>
+                        ) : (
+                          <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{reasons.join(", ")}</span>
+                        )}
+                        <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
+                          <Eye size={14} color={COLORS.inkSoft} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -3003,16 +3013,52 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 }
 
 /* ---------------------------------- PRICING SETTINGS ---------------------------------- */
-// A simple, always-findable place to grab the same links used elsewhere in the app (the
-// measuring guide, the two review links) for whenever a customer asks for one mid-conversation
-// rather than through an existing task or order.
-function QuickLinksPanel() {
+// A simple, always-findable place to grab the same links and common messages used elsewhere
+// in the app, for whenever a customer asks something mid-conversation rather than through an
+// existing task or order. Pricing figures pull from the real, current rates so this never goes
+// stale if rates are ever adjusted in Shop Settings.
+function QuickLinksPanel({ rates }) {
   const [copiedKey, setCopiedKey] = useState(null);
 
-  const links = [
-    { key: "guide", label: "Measuring Guide", value: MEASURING_GUIDE_LINK },
-    { key: "google", label: "Google Review", value: GOOGLE_REVIEW_LINK },
-    { key: "facebook", label: "Facebook Review", value: FACEBOOK_REVIEW_LINK },
+  const items = [
+    {
+      key: "guide",
+      label: "Measuring Guide",
+      value: MEASURING_GUIDE_LINK,
+      short: true,
+    },
+    {
+      key: "pricingQuick",
+      label: "Quick Pricing Reply",
+      value: `Standard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Let me know if you'd like more details!`,
+    },
+    {
+      key: "pricingFull",
+      label: "Full Info (Pricing, Pickup, Payment)",
+      value: `Here's how it works: standard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days. Payment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
+    },
+    {
+      key: "address",
+      label: "Drop-off Address",
+      value: `You can drop off at ${BUSINESS_ADDRESS}.`,
+    },
+    {
+      key: "labeling",
+      label: "Labeling Instructions",
+      value: "Please tape your name and number to one of your items — it helps me keep everyone's items straight.",
+    },
+    {
+      key: "google",
+      label: "Google Review",
+      value: GOOGLE_REVIEW_LINK,
+      short: true,
+    },
+    {
+      key: "facebook",
+      label: "Facebook Review",
+      value: FACEBOOK_REVIEW_LINK,
+      short: true,
+    },
   ];
 
   const copy = async (key, value) => {
@@ -3025,16 +3071,16 @@ function QuickLinksPanel() {
 
   return (
     <div className="space-y-3">
-      {links.map((link) => (
-        <div key={link.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
-          <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{link.label}</p>
-          <p className="font-body text-xs truncate mb-2" style={{ color: COLORS.inkSoft }}>{link.value}</p>
+      {items.map((item) => (
+        <div key={item.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
+          <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{item.label}</p>
+          <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : ""}`} style={{ color: COLORS.inkSoft }}>{item.value}</p>
           <button
-            onClick={() => copy(link.key, link.value)}
+            onClick={() => copy(item.key, item.value)}
             className="font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
           >
-            {copiedKey === link.key ? "Copied!" : "Copy link"}
+            {copiedKey === item.key ? "Copied!" : item.short ? "Copy link" : "Copy message"}
           </button>
         </div>
       ))}
@@ -4676,7 +4722,7 @@ function InternalTracker() {
 
       {quickLinksOpen && (
         <Modal title="Quick Links" onClose={() => setQuickLinksOpen(false)}>
-          <QuickLinksPanel />
+          <QuickLinksPanel rates={rates} />
         </Modal>
       )}
 
