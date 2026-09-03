@@ -3057,6 +3057,8 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 // stale if rates are ever adjusted in Shop Settings.
 function QuickLinksPanel({ rates }) {
   const [copiedKey, setCopiedKey] = useState(null);
+  const [customerName, setCustomerName] = useState("");
+  const trimmedName = customerName.trim();
 
   const items = [
     {
@@ -3078,17 +3080,17 @@ function QuickLinksPanel({ rates }) {
     {
       key: "sendReviewAgreed",
       label: "Send Review - Already Agreed",
-      value: `Thanks, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`,
+      value: `Thanks${trimmedName ? ` ${trimmedName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`,
     },
     {
       key: "requestReview",
       label: "Request Review",
-      value: `Hi [Name],\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
+      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
     },
     {
       key: "requestReviewBelated",
       label: "Belated Request (a few weeks later)",
-      value: `Hi,\n\nI know it's been a couple weeks since you picked up your screens. I just want to say once more, "Thanks for your business!" If you have a couple minutes to spare, a review on Google or Facebook would go a long way to help me grow my new screen business. I appreciate it!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
+      value: `Hi${trimmedName ? ` ${trimmedName}` : ""},\n\nI know it's been a couple weeks since you picked up your screens. I just want to say once more, "Thanks for your business!" If you have a couple minutes to spare, a review on Google or Facebook would go a long way to help me grow my new screen business. I appreciate it!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
     },
   ];
 
@@ -3102,6 +3104,17 @@ function QuickLinksPanel({ rates }) {
 
   return (
     <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Customer name (for review messages)</label>
+        <input
+          type="text"
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          placeholder="First name"
+          className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
+          style={{ borderColor: COLORS.line, color: COLORS.ink }}
+        />
+      </div>
       {items.map((item) => (
         <div key={item.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
           <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{item.label}</p>
