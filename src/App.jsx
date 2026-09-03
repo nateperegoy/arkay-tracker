@@ -1285,7 +1285,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
               ? `Pickup scheduled ${formatDate(order.pickupDate)}`
               : order.completionDate
               ? `Ready ${formatDate(order.completionDate)}`
-              : "Not completed"}
+              : ""}
           </span>
         </div>
         {(order.numScreens > 0 || order.numScreensCustom > 0) && (
@@ -1293,7 +1293,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             <Layers size={13} color={COLORS.inkSoft} />
             <span>
               {order.numScreens > 0
-                ? `${order.numScreens} screens${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${order.numScreensCustom > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
+                ? `${order.numScreens} screen${order.numScreens === 1 ? "" : "s"}${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${order.numScreensCustom > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
                 : `${order.numScreensCustom} custom screen${order.numScreensCustom === 1 ? "" : "s"}`}
               {order.frameFeet > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""}
             </span>
@@ -1304,7 +1304,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             <DoorOpen size={13} color={COLORS.inkSoft} />
             <span>
               {order.patioDoorCount > 0
-                ? `${order.patioDoorCount} patio door screen(s)${order.numPatioCustom > 0 ? ` (+${order.numPatioCustom} custom)` : ""}`
+                ? `${order.patioDoorCount} patio door screen${order.patioDoorCount === 1 ? "" : "s"}${order.numPatioCustom > 0 ? ` (+${order.numPatioCustom} custom)` : ""}`
                 : `${order.numPatioCustom} custom patio door screen${order.numPatioCustom === 1 ? "" : "s"}`}
             </span>
           </div>
@@ -1780,7 +1780,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       </p>
                     )}
                     {sub.patioScreenCount > 0 && (
-                      <p>{sub.patioScreenCount} patio door screen(s){sub.patioScreenWidth && sub.patioScreenHeight ? ` — inside ${sub.patioScreenWidth}"×${sub.patioScreenHeight}"` : ""}</p>
+                      <p>{sub.patioScreenCount} patio door screen{sub.patioScreenCount === 1 ? "" : "s"}{sub.patioScreenWidth && sub.patioScreenHeight ? ` — inside ${sub.patioScreenWidth}"×${sub.patioScreenHeight}"` : ""}</p>
                     )}
                     {sub.hasOversizedPatioScreens && (
                       <p style={{ color: COLORS.stamp }}>
@@ -1917,13 +1917,13 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                 className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
                                 style={{ background: COLORS.canvasDark, color: COLORS.ink }}
                               >
-                                They already said yes
+                                Send Review
                                 <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>Reply after they've agreed to leave one</span>
                               </button>
                               <button
                                 onClick={async () => {
                                   const firstName = (order.customerName || "").split(" ")[0] || "there";
-                                  const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
+                                  const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
                                   try { await navigator.clipboard.writeText(message); } catch (e) {}
                                   window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
                                   onToggleReview(order.id);
@@ -1932,7 +1932,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                 className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
                                 style={{ background: COLORS.canvasDark, color: COLORS.ink }}
                               >
-                                Ask for the first time
+                                Request Review
                                 <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>They haven't been asked yet</span>
                               </button>
                               <button onClick={() => setReviewMenuOrderId(null)} className="w-full text-center font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
@@ -4067,13 +4067,13 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     <>
                       {standardPatioCount > 0 && (
                         <div className="flex items-center justify-between font-body text-sm">
-                          <span style={{ color: COLORS.inkSoft }}>{standardPatioCount} patio door screen(s)</span>
+                          <span style={{ color: COLORS.inkSoft }}>{standardPatioCount} patio door screen{standardPatioCount === 1 ? "" : "s"}</span>
                           <span style={{ color: COLORS.ink }}>{formatWholeMoney(standardPatioCount * rates.patioDoor)}</span>
                         </div>
                       )}
                       {oversizedPatioCount > 0 && (
                         <div className="flex items-center justify-between font-body text-sm">
-                          <span style={{ color: COLORS.inkSoft }}>{oversizedPatioCount} larger patio door screen(s) (35"+ wide)</span>
+                          <span style={{ color: COLORS.inkSoft }}>{oversizedPatioCount} larger patio door screen{oversizedPatioCount === 1 ? "" : "s"} (35"+ wide)</span>
                           <span style={{ color: COLORS.ink }}>{formatWholeMoney(oversizedPatioCount * rates.patioDoorPremium)}</span>
                         </div>
                       )}
@@ -4662,9 +4662,9 @@ function InternalTracker() {
               </button>
             </div>
           ) : (
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x snap-mandatory">
               {STATUSES.filter((s) => s.id !== "closed").map((s) => (
-                <div key={s.id} className="flex-shrink-0" style={{ width: 290 }}>
+                <div key={s.id} className="flex-shrink-0 snap-start" style={{ width: 290 }}>
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
                     <span className="font-display text-sm uppercase tracking-wide" style={{ color: COLORS.ink }}>{s.label}</span>
