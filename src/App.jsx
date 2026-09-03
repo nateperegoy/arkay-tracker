@@ -1908,7 +1908,8 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                               <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>Which message fits?</p>
                               <button
                                 onClick={async () => {
-                                  const message = `Thanks, that would be great — I really appreciate it.\n\nI just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
+                                  const firstName = (order.customerName || "").split(" ")[0] || "";
+                                  const message = `Thanks${firstName ? ` ${firstName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
                                   try { await navigator.clipboard.writeText(message); } catch (e) {}
                                   window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
                                   onToggleReview(order.id);
