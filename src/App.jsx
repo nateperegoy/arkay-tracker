@@ -29,6 +29,7 @@ import {
   CheckCheck,
   AlertCircle,
   Search,
+  Link,
   CalendarPlus,
   MoreHorizontal,
   TrendingUp,
@@ -3002,6 +3003,45 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 }
 
 /* ---------------------------------- PRICING SETTINGS ---------------------------------- */
+// A simple, always-findable place to grab the same links used elsewhere in the app (the
+// measuring guide, the two review links) for whenever a customer asks for one mid-conversation
+// rather than through an existing task or order.
+function QuickLinksPanel() {
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const links = [
+    { key: "guide", label: "Measuring Guide", value: MEASURING_GUIDE_LINK },
+    { key: "google", label: "Google Review", value: GOOGLE_REVIEW_LINK },
+    { key: "facebook", label: "Facebook Review", value: FACEBOOK_REVIEW_LINK },
+  ];
+
+  const copy = async (key, value) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+    } catch (e) {}
+  };
+
+  return (
+    <div className="space-y-3">
+      {links.map((link) => (
+        <div key={link.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
+          <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{link.label}</p>
+          <p className="font-body text-xs truncate mb-2" style={{ color: COLORS.inkSoft }}>{link.value}</p>
+          <button
+            onClick={() => copy(link.key, link.value)}
+            className="font-display text-xs uppercase tracking-wide underline"
+            style={{ color: COLORS.slate }}
+          >
+            {copiedKey === link.key ? "Copied!" : "Copy link"}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PricingSettings({ rates, onSave, onCancel }) {
   const [form, setForm] = useState({
     screen: rates.screen,
@@ -4185,6 +4225,7 @@ function InternalTracker() {
   const [pricingOpen, setPricingOpen] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [quickLinksOpen, setQuickLinksOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [viewingOrder, setViewingOrder] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
@@ -4502,6 +4543,7 @@ function InternalTracker() {
               { label: "Reports", icon: TrendingUp, onClick: () => { setView("reports"); setMoreMenuOpen(false); } },
               { label: "Complete", icon: CheckCheck, onClick: () => { setView("complete"); setMoreMenuOpen(false); } },
               { label: "Look up a customer", icon: Search, onClick: () => { setCustomerSearchOpen(true); setMoreMenuOpen(false); } },
+              { label: "Quick links", icon: Link, onClick: () => { setQuickLinksOpen(true); setMoreMenuOpen(false); } },
               { label: "Shop settings", icon: Settings, onClick: () => { setPricingOpen(true); setMoreMenuOpen(false); } },
               { label: "Forget this device", icon: Lock, onClick: () => { try { localStorage.removeItem("dashboard-trusted"); } catch (e) {} window.location.reload(); } },
             ].map((item) => (
@@ -4629,6 +4671,12 @@ function InternalTracker() {
       {pricingOpen && (
         <Modal title="Shop settings" onClose={() => setPricingOpen(false)}>
           <PricingSettings rates={rates} onSave={saveRates} onCancel={() => setPricingOpen(false)} />
+        </Modal>
+      )}
+
+      {quickLinksOpen && (
+        <Modal title="Quick Links" onClose={() => setQuickLinksOpen(false)}>
+          <QuickLinksPanel />
         </Modal>
       )}
 
