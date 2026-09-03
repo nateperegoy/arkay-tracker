@@ -1359,7 +1359,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   // marked done/picked up while the door is still sitting at Metro Screenworks. This only
   // cares whether the door itself has come back yet, and stops showing once it's Closed.
   const waitingOnMetro = withDays(orders.filter((o) => o.fullPatioReplacement && o.metroStatus === "ordered" && o.status !== "closed" && o.status !== "new_order")).sort((a, b) => b.daysOpen - a.daysOpen);
-  const waiting = withDays(orders.filter((o) => o.status === "waiting_parts")).sort((a, b) => b.daysOpen - a.daysOpen);
+  const waiting = withDays(orders.filter((o) => o.status === "waiting_parts" && !(o.fullPatioReplacement && o.metroStatus === "ordered"))).sort((a, b) => b.daysOpen - a.daysOpen);
   const { queue, total } = computeNightlyQueue(active, 8);
 
   const CategoryIcons = ({ order }) => (
