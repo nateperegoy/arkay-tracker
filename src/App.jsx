@@ -1291,13 +1291,22 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
         {(order.numScreens > 0 || order.numScreensCustom > 0) && (
           <div className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <Layers size={13} color={COLORS.inkSoft} />
-            <span>{order.numScreens || 0} screens{order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}{order.numScreensCustom > 0 ? ` (+${order.numScreensCustom} custom)` : ""} · {order.frameFeet || 0} ft {order.frameColor || "White"} frame</span>
+            <span>
+              {order.numScreens > 0
+                ? `${order.numScreens} screens${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${order.numScreensCustom > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
+                : `${order.numScreensCustom} custom screen${order.numScreensCustom === 1 ? "" : "s"}`}
+              {order.frameFeet > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""}
+            </span>
           </div>
         )}
         {(order.patioDoorCount > 0 || order.numPatioCustom > 0) && (
           <div className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <DoorOpen size={13} color={COLORS.inkSoft} />
-            <span>{order.patioDoorCount || 0} patio door screen(s){order.numPatioCustom > 0 ? ` (+${order.numPatioCustom} custom)` : ""}</span>
+            <span>
+              {order.patioDoorCount > 0
+                ? `${order.patioDoorCount} patio door screen(s)${order.numPatioCustom > 0 ? ` (+${order.numPatioCustom} custom)` : ""}`
+                : `${order.numPatioCustom} custom patio door screen${order.numPatioCustom === 1 ? "" : "s"}`}
+            </span>
           </div>
         )}
         {order.fullPatioReplacement && (
@@ -1308,7 +1317,11 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
         )}
       </div>
 
-      {order.notes && <p className="font-body text-sm mt-3 italic" style={{ color: COLORS.inkSoft }}>"{order.notes}"</p>}
+      {order.notes && (
+        <p className="font-body text-sm mt-3 italic truncate" style={{ color: COLORS.inkSoft }}>
+          "{order.notes}"
+        </p>
+      )}
 
       <div className="my-3 border-t" style={dividerStyle} />
 
