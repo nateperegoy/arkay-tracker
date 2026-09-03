@@ -1251,7 +1251,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
           </div>
           {order.status !== "picked_up" && showDue && (
             isOverdue ? (
-              <span className="inline-block mt-1.5 text-xs font-display uppercase tracking-wide rounded-full px-2 py-0.5 text-white" style={{ background: COLORS.stamp }}>
+              <span className="inline-block mt-1.5 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: "#F5E7E3", color: COLORS.stamp }}>
                 {daysOpen - rates.turnaroundDays}d overdue
               </span>
             ) : (
