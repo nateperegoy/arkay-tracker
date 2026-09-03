@@ -702,7 +702,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
 
   const inputCls = "w-full rounded-md border px-3 py-2 text-sm font-body bg-white";
   const inputStyle = { borderColor: COLORS.line, color: COLORS.ink };
-  const labelCls = "block text-xs font-display uppercase tracking-wide mb-1";
+  const labelCls = "block text-xs font-body font-semibold mb-1";
 
   return (
     <div className="space-y-4">
@@ -810,8 +810,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             </div>
           )}
           <div>
-            <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="text-xs font-display uppercase tracking-wide underline mt-1 block text-left" style={{ color: COLORS.slate }}>
-              {showCustomScreen ? "Hide custom-priced screens" : "+ Custom price for some screens?"}
+            <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="flex items-center gap-1.5 text-sm font-body font-semibold mt-1" style={{ color: COLORS.slate }}>
+              {showCustomScreen ? <X size={14} /> : <Plus size={14} />} Custom price for some screens
             </button>
             {showCustomScreen && (
               <div className="grid grid-cols-2 gap-3 mt-2">
@@ -825,8 +825,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowScreenHardware((v) => !v)} className="text-xs font-display uppercase tracking-wide underline mt-1 block text-left" style={{ color: COLORS.slate }}>
-              {showScreenHardware ? "Hide hardware" : "+ Add hardware?"}
+            <button type="button" onClick={() => setShowScreenHardware((v) => !v)} className="flex items-center gap-1.5 text-sm font-body font-semibold mt-1" style={{ color: COLORS.slate }}>
+              {showScreenHardware ? <X size={14} /> : <Plus size={14} />} Add hardware
             </button>
             {showScreenHardware && (
               <div className="mt-2 space-y-2">
@@ -861,10 +861,10 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, fullPatioReplacement: !f.fullPatioReplacement }))}
-              className="text-xs font-display uppercase tracking-wide underline mt-1 block text-left"
+              className="flex items-center gap-1.5 text-sm font-body font-semibold mt-1"
               style={{ color: COLORS.slate }}
             >
-              {form.fullPatioReplacement ? "Remove whole door replacement" : "+ Whole door replacement (via Metro Screenworks)?"}
+              {form.fullPatioReplacement ? <X size={14} /> : <Plus size={14} />} Whole door replacement (via Metro Screenworks)
             </button>
             {form.fullPatioReplacement && (
               <div className="mt-2 space-y-2">
@@ -888,8 +888,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowCustomPatio((v) => !v)} className="text-xs font-display uppercase tracking-wide underline mt-1 block text-left" style={{ color: COLORS.slate }}>
-              {showCustomPatio ? "Hide custom-priced patio screens" : "+ Custom price for some patio screens?"}
+            <button type="button" onClick={() => setShowCustomPatio((v) => !v)} className="flex items-center gap-1.5 text-sm font-body font-semibold mt-1" style={{ color: COLORS.slate }}>
+              {showCustomPatio ? <X size={14} /> : <Plus size={14} />} Custom price for some patio screens
             </button>
             {showCustomPatio && (
               <div className="grid grid-cols-2 gap-3 mt-2">
@@ -903,8 +903,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowPatioHardware((v) => !v)} className="text-xs font-display uppercase tracking-wide underline mt-1 block text-left" style={{ color: COLORS.slate }}>
-              {showPatioHardware ? "Hide hardware" : "+ Add hardware?"}
+            <button type="button" onClick={() => setShowPatioHardware((v) => !v)} className="flex items-center gap-1.5 text-sm font-body font-semibold mt-1" style={{ color: COLORS.slate }}>
+              {showPatioHardware ? <X size={14} /> : <Plus size={14} />} Add hardware
             </button>
             {showPatioHardware && (
               <div className="mt-2 space-y-2">
