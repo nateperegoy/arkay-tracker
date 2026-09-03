@@ -3076,16 +3076,19 @@ function QuickLinksPanel({ rates }) {
       value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
     },
     {
-      key: "google",
-      label: "Google Review",
-      value: GOOGLE_REVIEW_LINK,
-      short: true,
+      key: "sendReviewAgreed",
+      label: "Send Review - Already Agreed",
+      value: `Thanks, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`,
     },
     {
-      key: "facebook",
-      label: "Facebook Review",
-      value: FACEBOOK_REVIEW_LINK,
-      short: true,
+      key: "requestReview",
+      label: "Request Review",
+      value: `Hi [Name],\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
+    },
+    {
+      key: "requestReviewBelated",
+      label: "Belated Request (a few weeks later)",
+      value: `Hi,\n\nI know it's been a couple weeks since you picked up your screens. I just want to say once more, "Thanks for your business!" If you have a couple minutes to spare, a review on Google or Facebook would go a long way to help me grow my new screen business. I appreciate it!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
     },
   ];
 
