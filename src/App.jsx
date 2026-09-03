@@ -358,6 +358,7 @@ const BUSINESS_ADDRESS = "514 E. Irish Ave, Littleton, CO 80122";
 // → copy link. Facebook: your Page → Reviews tab → copy the page URL.
 const GOOGLE_REVIEW_LINK = "https://g.page/r/CVNi-unTA_iwEAI/review";
 const FACEBOOK_REVIEW_LINK = "https://www.facebook.com/profile.php?id=61574471589912&sk=reviews";
+const MEASURING_GUIDE_LINK = "https://www.metroscreenworks.com/measure-for-window-screens/";
 
 // Builds a standard .ics calendar file for a scheduled pickup, as an all-day event on the
 // pickup date. iOS Safari recognizes the text/calendar MIME type on a data URI and hands it
@@ -1944,6 +1945,19 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                           Todoist sync failed — retry
                         </button>
                       )}
+                      {task.phone && (
+                        <button
+                          onClick={async () => {
+                            const message = `Here's a quick guide to help you measure your window screen: ${MEASURING_GUIDE_LINK}`;
+                            try { await navigator.clipboard.writeText(message); } catch (e) {}
+                            window.open(voiceLink(task.phone), "_blank", "noopener,noreferrer");
+                          }}
+                          className="font-display text-xs uppercase tracking-wide underline"
+                          style={{ color: COLORS.slate }}
+                        >
+                          Send Guide
+                        </button>
+                      )}
                       <button
                         onClick={() => onCompleteTask(task.id)}
                         className="font-display text-xs uppercase tracking-wide underline"
@@ -3371,6 +3385,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
           const newTask = {
             id: uid(),
             orderId: null,
+            phone: form.phone,
             description: `Send measuring guide to ${form.customerName.trim() || "customer"} (${formatPhone(form.phone) || form.phone})`,
             dueDate: todayISO(),
             createdAt: Date.now(),
