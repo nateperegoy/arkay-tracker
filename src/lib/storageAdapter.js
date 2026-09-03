@@ -170,3 +170,34 @@ function buildRow(key, record) {
 }
 
 export const storageAdapter = { get, set, delete: del };
+
+// Scoped lookup for the customer-facing form's "welcome back" recognition — only ever
+// returns a first name for an exact phone match, never full order history or pricing,
+// keeping this safe to call from a public-facing form.
+async function lookupCustomerByPhone(phone) {
+  try {
+    const digits = (phone || "").replace(/\D/g, "");
+    if (digits.length < 10) return null;
+    const last10 = digits.slice(-10);
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("data")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error || !data) return null;
+
+    const match = data.find((row) => {
+      const rowDigits = (row.data?.phone || "").replace(/\D/g, "");
+      return rowDigits.slice(-10) === last10;
+    });
+
+    if (!match || !match.data?.customerName) return null;
+    return match.data.customerName.split(" ")[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+storageAdapter.lookupCustomerByPhone = lookupCustomerByPhone;

@@ -1098,7 +1098,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
               </button>
             )}
           </div>
-          <span className="text-xs font-display uppercase rounded-full px-2 py-1" style={{ background: s.soft, color: s.color }}>{s.label}</span>
+          <span className="text-xs font-body font-semibold rounded-full px-2 py-1" style={{ background: s.soft, color: s.color }}>{s.label}</span>
         </div>
 
         {order.status === "picked_up" && (() => {
@@ -1315,7 +1315,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
         <select
           value={order.status}
           onChange={(e) => onStatusChange(order.id, e.target.value)}
-          className="text-xs font-display uppercase rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
           style={{ background: s.soft, color: s.color }}
         >
           {STATUSES.map((st) => (
@@ -1389,7 +1389,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
         <select
           value={order.status}
           onChange={(e) => onStatusChange(order.id, e.target.value)}
-          className="text-xs font-display uppercase rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
           style={{ background: s.soft, color: s.color }}
         >
           {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
@@ -1839,7 +1839,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     <select
                       value={order.status}
                       onChange={(e) => onOrderStatusChange(order.id, e.target.value)}
-                      className="text-xs font-display uppercase rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+                      className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
                       style={{ background: s.soft, color: s.color }}
                     >
                       {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
@@ -1962,7 +1962,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         <select
                           value={order.metroStatus || "ordered"}
                           onChange={(e) => onMetroStatusChange(order.id, e.target.value)}
-                          className="text-xs font-display uppercase rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+                          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
                           style={{ background: ms.soft, color: ms.color }}
                         >
                           {METRO_STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
@@ -2166,7 +2166,7 @@ function PickupPanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookup
         <select
           value={order.status}
           onChange={(e) => onStatusChange(order.id, e.target.value)}
-          className="text-xs font-display uppercase rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
           style={{ background: s.soft, color: s.color }}
         >
           {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
@@ -3174,6 +3174,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
   const [form, setForm] = useState({ ...emptyRequestForm, requestType: initialRequestType });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [welcomeBackName, setWelcomeBackName] = useState(null);
 
   const submissionIdRef = useRef(uid());
 
@@ -3192,6 +3193,26 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   const setPhone = (e) => setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }));
+
+  // Looks up whether this phone number matches a past order, so a returning customer sees a
+  // small "Welcome back" note. Debounced so it only fires once they've paused typing, not on
+  // every keystroke, and only once the number is actually complete (10 digits).
+  useEffect(() => {
+    const digits = (form.phone || "").replace(/\D/g, "");
+    if (digits.length !== 10) {
+      setWelcomeBackName(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const name = await window.storage.lookupCustomerByPhone(form.phone);
+        setWelcomeBackName(name);
+      } catch (e) {
+        setWelcomeBackName(null);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.phone]);
 
   const toggleNeedsCustomScreens = () => {
     setForm((f) => {
@@ -3361,6 +3382,11 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Phone number</label>
                     <input type="tel" inputMode="tel" className={inputCls} style={inputStyle} value={form.phone} onChange={setPhone} placeholder="(555) 555-0100" />
+                    {welcomeBackName && (
+                      <p className="font-body text-sm mt-1.5" style={{ color: COLORS.sage }}>
+                        Welcome back, {welcomeBackName}!
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Email (optional)</label>
