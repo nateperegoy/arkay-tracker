@@ -1658,6 +1658,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
   const needsAction = orders
     .filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0)
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
+  const pickingUpToday = orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO());
 
   return (
     <div className="space-y-6">
@@ -1673,12 +1674,33 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
             + Add Task
           </button>
         </div>
-        {sorted.length === 0 && pickedUp.length === 0 && needsAction.length === 0 && missingDetails.length === 0 && missingMonths.length === 0 && manualTasks.length === 0 ? (
+        {sorted.length === 0 && pickedUp.length === 0 && needsAction.length === 0 && missingDetails.length === 0 && missingMonths.length === 0 && manualTasks.length === 0 && pickingUpToday.length === 0 ? (
           <div className="rounded-lg border bg-white p-8 text-center" style={{ borderColor: COLORS.line }}>
             <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Nothing pending on your end right now.</p>
           </div>
         ) : (
           <div className="space-y-4">
+            {pickingUpToday.length > 0 && (
+              <>
+                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Picking Up Today</p>
+                <div className="space-y-2">
+                  {pickingUpToday.map((order) => (
+                    <div key={order.id} className="rounded-xl border bg-white p-3 flex items-center justify-between gap-2" style={{ borderColor: COLORS.sage }}>
+                      <div className="min-w-0">
+                        <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+                        <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+                        {order.pickupTimeNote && (
+                          <p className="font-body text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>{order.pickupTimeNote}</p>
+                        )}
+                      </div>
+                      <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
+                        <Eye size={14} color={COLORS.inkSoft} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
             {sorted.length > 0 && (
               <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>New Requests</p>
             )}
