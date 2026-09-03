@@ -3035,17 +3035,7 @@ function QuickLinksPanel({ rates }) {
     {
       key: "pricingFull",
       label: "Full Info (Pricing, Pickup, Payment)",
-      value: `Here's how it works: standard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days. Payment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
-    },
-    {
-      key: "address",
-      label: "Drop-off Address",
-      value: `You can drop off at ${BUSINESS_ADDRESS}.`,
-    },
-    {
-      key: "labeling",
-      label: "Labeling Instructions",
-      value: "Please tape your name and number to one of your items — it helps me keep everyone's items straight.",
+      value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
     },
     {
       key: "google",
@@ -3074,7 +3064,7 @@ function QuickLinksPanel({ rates }) {
       {items.map((item) => (
         <div key={item.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
           <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{item.label}</p>
-          <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : ""}`} style={{ color: COLORS.inkSoft }}>{item.value}</p>
+          <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : "whitespace-pre-line"}`} style={{ color: COLORS.inkSoft }}>{item.value}</p>
           <button
             onClick={() => copy(item.key, item.value)}
             className="font-display text-xs uppercase tracking-wide underline"
