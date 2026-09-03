@@ -810,7 +810,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             </div>
           )}
           <div>
-            <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="flex items-start gap-1.5 text-sm font-body font-semibold mt-1 text-left" style={{ color: COLORS.slate }}>
+            <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showCustomScreen ? <X size={14} /> : <Plus size={14} />} Custom price for some screens
             </button>
             {showCustomScreen && (
@@ -825,7 +825,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowScreenHardware((v) => !v)} className="flex items-start gap-1.5 text-sm font-body font-semibold mt-1 text-left" style={{ color: COLORS.slate }}>
+            <button type="button" onClick={() => setShowScreenHardware((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showScreenHardware ? <X size={14} /> : <Plus size={14} />} Add hardware
             </button>
             {showScreenHardware && (
@@ -861,7 +861,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, fullPatioReplacement: !f.fullPatioReplacement }))}
-              className="flex items-start gap-1.5 text-sm font-body font-semibold mt-1 text-left"
+              className="flex items-start gap-1.5 text-sm font-body mt-1 text-left"
               style={{ color: COLORS.slate }}
             >
               {form.fullPatioReplacement ? <X size={14} /> : <Plus size={14} />} Whole door replacement (via Metro Screenworks)
@@ -888,7 +888,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowCustomPatio((v) => !v)} className="flex items-start gap-1.5 text-sm font-body font-semibold mt-1 text-left" style={{ color: COLORS.slate }}>
+            <button type="button" onClick={() => setShowCustomPatio((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showCustomPatio ? <X size={14} /> : <Plus size={14} />} Custom price for some patio screens
             </button>
             {showCustomPatio && (
@@ -903,7 +903,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
               </div>
             )}
-            <button type="button" onClick={() => setShowPatioHardware((v) => !v)} className="flex items-start gap-1.5 text-sm font-body font-semibold mt-1 text-left" style={{ color: COLORS.slate }}>
+            <button type="button" onClick={() => setShowPatioHardware((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showPatioHardware ? <X size={14} /> : <Plus size={14} />} Add hardware
             </button>
             {showPatioHardware && (
