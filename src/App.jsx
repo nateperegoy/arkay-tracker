@@ -356,8 +356,8 @@ const BUSINESS_ADDRESS = "514 E. Irish Ave, Littleton, CO 80122";
 
 // Update these two once you have the actual links — Google: Business Profile → "Ask for reviews"
 // → copy link. Facebook: your Page → Reviews tab → copy the page URL.
-const GOOGLE_REVIEW_LINK = "https://g.page/r/PLACEHOLDER/review";
-const FACEBOOK_REVIEW_LINK = "https://facebook.com/PLACEHOLDER";
+const GOOGLE_REVIEW_LINK = "https://g.page/r/CVNi-unTA_iwEAI/review";
+const FACEBOOK_REVIEW_LINK = "https://www.facebook.com/profile.php?id=61574471589912&sk=reviews";
 
 // Builds a standard .ics calendar file for a scheduled pickup, as an all-day event on the
 // pickup date. iOS Safari recognizes the text/calendar MIME type on a data URI and hands it
@@ -1629,6 +1629,7 @@ function TimeLogSection({ timeLogs, onSaveLog }) {
 function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
+  const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
   const [pendingExpenseAmount, setPendingExpenseAmount] = useState({});
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [taskOrderId, setTaskOrderId] = useState("");
@@ -1833,29 +1834,61 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     <span className="font-body text-xs rounded-full px-2 py-0.5" style={{ background: order.pickupDate ? COLORS.canvasDark : "#F5E7E3", color: order.pickupDate ? COLORS.inkSoft : COLORS.stamp }}>
                       {order.pickupDate ? `Picked up ${formatDate(order.pickupDate)}` : "No pickup date"}
                     </span>
-                    <button
-                      onClick={async () => {
-                        if (order.reviewRequestSent) {
-                          onToggleReview(order.id);
-                          return;
-                        }
-                        const firstName = (order.customerName || "").split(" ")[0] || "there";
-                        const message = `Hi ${firstName}, thanks again for choosing Arkay Window Screens! If you have a minute, I'd really appreciate a review — Google: ${GOOGLE_REVIEW_LINK} or Facebook: ${FACEBOOK_REVIEW_LINK}`;
-                        try {
-                          await navigator.clipboard.writeText(message);
-                        } catch (e) {
-                          // Clipboard access can fail (permissions, older browsers) — Google Voice
-                          // still opens either way, just without the message pre-copied.
-                        }
-                        window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
-                        onToggleReview(order.id);
-                      }}
-                      className="p-1 rounded hover:bg-black/5"
-                      aria-label={order.reviewRequestSent ? "Review request sent" : "Copy review message and open Google Voice"}
-                      title={order.reviewRequestSent ? "Review request sent — click to undo" : "Copy review message and open Google Voice"}
-                    >
-                      <MessageCircle size={15} color={order.reviewRequestSent ? COLORS.slate : COLORS.line} fill={order.reviewRequestSent ? COLORS.slate : "none"} />
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          if (order.reviewRequestSent) {
+                            onToggleReview(order.id);
+                            return;
+                          }
+                          setReviewMenuOrderId(order.id);
+                        }}
+                        className="p-1 rounded hover:bg-black/5"
+                        aria-label={order.reviewRequestSent ? "Review request sent" : "Send review request"}
+                        title={order.reviewRequestSent ? "Review request sent — click to undo" : "Send review request"}
+                      >
+                        <MessageCircle size={15} color={order.reviewRequestSent ? COLORS.slate : COLORS.line} fill={order.reviewRequestSent ? COLORS.slate : "none"} />
+                      </button>
+                      {reviewMenuOrderId === order.id && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReviewMenuOrderId(null)}>
+                          <div className="rounded-xl p-4 max-w-xs w-full bg-white" onClick={(e) => e.stopPropagation()} style={{ border: `1px solid ${COLORS.line}` }}>
+                            <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>Which message fits?</p>
+                            <button
+                              onClick={async () => {
+                                const message = `Thanks, that would be great — I really appreciate it. I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine. Google: ${GOOGLE_REVIEW_LINK} or Facebook: ${FACEBOOK_REVIEW_LINK} Thanks, Nate`;
+                                try { await navigator.clipboard.writeText(message); } catch (e) {}
+                                window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                onToggleReview(order.id);
+                                setReviewMenuOrderId(null);
+                              }}
+                              className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
+                              style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                            >
+                              They already said yes
+                              <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>Reply after they've agreed to leave one</span>
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const firstName = (order.customerName || "").split(" ")[0] || "there";
+                                const message = `Hi ${firstName}, thanks again for your business — I really appreciate it. If you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine. Google: ${GOOGLE_REVIEW_LINK} or Facebook: ${FACEBOOK_REVIEW_LINK} Thanks! Nate`;
+                                try { await navigator.clipboard.writeText(message); } catch (e) {}
+                                window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                onToggleReview(order.id);
+                                setReviewMenuOrderId(null);
+                              }}
+                              className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
+                              style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                            >
+                              Ask for the first time
+                              <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>They haven't been asked yet</span>
+                            </button>
+                            <button onClick={() => setReviewMenuOrderId(null)} className="w-full text-center font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <select
                       value={order.status}
                       onChange={(e) => onOrderStatusChange(order.id, e.target.value)}
