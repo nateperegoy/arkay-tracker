@@ -3073,7 +3073,7 @@ function QuickLinksPanel({ rates }) {
     {
       key: "pricingFull",
       label: "Full Info (Pricing, Pickup, Payment)",
-      value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, and standard patio door screens are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
+      value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, larger screens are $${rates.screenPremium - rates.screen} more and standard patio door screens (if needed) are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
     },
     {
       key: "sendReviewAgreed",
