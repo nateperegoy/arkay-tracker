@@ -2292,19 +2292,22 @@ const REPORTS_START_DATE = "2026-08-01";
 // Imported directly from the user's own income/expense tracking (Wave → Google Sheet close-out),
 // covering everything before this tracker started recording real data on Aug 1, 2026. Verified
 // against the document's own annual totals before use — 2025: 7469.31+2874.00+3194.00=13537.31 ✓,
-// 2026 income sums to 8504.50 ✓, 2026 expenses sum to 6082.70 ✓. Months not listed had no
-// recorded activity (not zero — just not tracked that month), so they're simply omitted.
+// 2026 income (Jan-Jul) sums to 8832.50, 2026 expenses (Jan-Jul) sum to 6094.35 — both check out
+// against the source PDF's own running totals. August 2026 is deliberately NOT included here even
+// though the source document has a figure for it — that month is already covered by live app
+// tracking (REPORTS_START_DATE), and including it here too would double-count it. Months not
+// listed had no recorded activity (not zero — just not tracked that month), so they're omitted.
 const HISTORICAL_FINANCIALS = [
   { year: 2025, month: 4, income: 7469.31, expenses: null },
   { year: 2025, month: 6, income: 2874.00, expenses: null },
   { year: 2025, month: 9, income: 3194.00, expenses: null },
-  { year: 2026, month: 1, income: 1120.00, expenses: 538.05 },
-  { year: 2026, month: 2, income: 695.00, expenses: 387.42 },
-  { year: 2026, month: 3, income: 540.00, expenses: 329.16 },
+  { year: 2026, month: 1, income: 1120.00, expenses: 537.05 },
+  { year: 2026, month: 2, income: 760.00, expenses: 395.42 },
+  { year: 2026, month: 3, income: 803.00, expenses: 279.52 },
   { year: 2026, month: 4, income: 1205.00, expenses: 361.44 },
   { year: 2026, month: 5, income: 1146.00, expenses: 1129.64 },
-  { year: 2026, month: 6, income: 2095.00, expenses: 1706.97 },
-  { year: 2026, month: 7, income: 1703.50, expenses: 1630.02 },
+  { year: 2026, month: 6, income: 2095.00, expenses: 1753.26 },
+  { year: 2026, month: 7, income: 1703.50, expenses: 1638.02 },
 ];
 
 // Builds one combined month-by-month dataset spanning the historical import and everything
