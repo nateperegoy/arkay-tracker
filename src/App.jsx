@@ -151,7 +151,10 @@ function getActionReasons(o, todayStr) {
   // Using dropOffDate as the reference point, same approach as the stale New Order check above —
   // there's no dedicated "entered this status on X" timestamp, so this is a reasonable proxy
   // rather than exact tracking of how long it's specifically been waiting on parts.
-  if (o.status === "waiting_parts") {
+  // Full patio replacements are excluded here — their progress is already tracked separately
+  // via metroStatus above (place the order, then pick it up when ready), and this generic
+  // threshold is tuned for regular parts, not a full door's genuinely longer normal turnaround.
+  if (o.status === "waiting_parts" && !o.fullPatioReplacement) {
     const days = daysBetween(o.dropOffDate, todayStr);
     if (days >= WAITING_PARTS_STALE_DAYS) reasons.push(`Waiting on parts ${days}d`);
   }
