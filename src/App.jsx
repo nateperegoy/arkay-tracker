@@ -3282,7 +3282,7 @@ function QuickLinksPanel({ rates, orders }) {
   const buildOrderSummary = (order) => {
     if (!order) return "";
     const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
-    const lines = [`Your total is $${Math.round(total)}`];
+    const lines = [order.customerName, `Your total is ($${Math.round(total)})`];
 
     const standard = Number(order.numScreens) || 0;
     const premium = Number(order.numScreensPremium) || 0;
