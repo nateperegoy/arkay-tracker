@@ -1556,8 +1556,8 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 // "What I got done" — lets Nate log partial progress toward an order's items (e.g. "4 of 8
 // screens finished today"), separate from the hours-based time log below it. Defaults to
 // today's date since this is naturally an end-of-day activity, not something logged for past days.
-function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
-  const today = todayISO();
+function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDeleteWorkProgress, displayDate }) {
+  const today = displayDate || todayISO();
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [screensInput, setScreensInput] = useState("");
   const [patioInput, setPatioInput] = useState("");
@@ -1579,6 +1579,9 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
 
   const todaysEntries = workProgress.filter((p) => p.date === today);
 
+  const remainingScreens = Math.max(0, totalScreens - priorScreens);
+  const remainingPatio = Math.max(0, totalPatio - priorPatio);
+
   const selectOrder = (id) => {
     setSelectedOrderId(id);
     setScreensInput("");
@@ -1587,8 +1590,8 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
 
   const save = async () => {
     if (!selectedOrder) return;
-    const screensCompleted = Number(screensInput) || 0;
-    const patioCompleted = Number(patioInput) || 0;
+    const screensCompleted = Math.min(Number(screensInput) || 0, remainingScreens);
+    const patioCompleted = Math.min(Number(patioInput) || 0, remainingPatio);
     if (screensCompleted === 0 && patioCompleted === 0) return;
     await onSaveWorkProgress({
       id: uid(),
@@ -1603,7 +1606,9 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
 
   return (
     <div className="mb-6">
-      <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.inkSoft }}>What I Got Done</p>
+      <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.inkSoft }}>
+        What I Got Done{today !== todayISO() ? ` — ${formatDate(today)}` : ""}
+      </p>
 
       {todaysEntries.length > 0 && (
         <div className="space-y-2 mb-3">
@@ -1644,13 +1649,13 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
 
         {selectedOrder && (
           <>
-            {totalScreens > 0 && (
+            {totalScreens > 0 && remainingScreens > 0 && (
               <div className="mb-3">
                 <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>
-                  Screens completed today {priorScreens > 0 ? `(${priorScreens} of ${totalScreens} already logged)` : `(out of ${totalScreens})`}
+                  Screens completed today ({remainingScreens} remaining{priorScreens > 0 ? `, ${priorScreens} of ${totalScreens} already logged` : ` of ${totalScreens}`})
                 </label>
                 <input
-                  type="number" inputMode="numeric" min="0" max={totalScreens} placeholder="0"
+                  type="number" inputMode="numeric" min="0" max={remainingScreens} placeholder="0"
                   value={screensInput}
                   onChange={(e) => setScreensInput(e.target.value)}
                   className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
@@ -1658,19 +1663,22 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
                 />
               </div>
             )}
-            {totalPatio > 0 && (
+            {totalPatio > 0 && remainingPatio > 0 && (
               <div className="mb-3">
                 <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>
-                  Patio doors completed today {priorPatio > 0 ? `(${priorPatio} of ${totalPatio} already logged)` : `(out of ${totalPatio})`}
+                  Patio doors completed today ({remainingPatio} remaining{priorPatio > 0 ? `, ${priorPatio} of ${totalPatio} already logged` : ` of ${totalPatio}`})
                 </label>
                 <input
-                  type="number" inputMode="numeric" min="0" max={totalPatio} placeholder="0"
+                  type="number" inputMode="numeric" min="0" max={remainingPatio} placeholder="0"
                   value={patioInput}
                   onChange={(e) => setPatioInput(e.target.value)}
                   className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
                   style={{ borderColor: COLORS.line, color: COLORS.ink }}
                 />
               </div>
+            )}
+            {remainingScreens === 0 && remainingPatio === 0 && (
+              <p className="font-body text-xs mb-3" style={{ color: COLORS.sage }}>Everything on this order is already logged as done.</p>
             )}
             <button onClick={save} className="font-display text-xs uppercase tracking-wide underline" style={{ color: COLORS.slate }}>
               Save progress
@@ -1727,7 +1735,7 @@ function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose, orders, workProgre
 
   return (
     <Modal title="Save My Work" onClose={onClose}>
-      <WorkProgressSection orders={orders} workProgress={workProgress} onSaveWorkProgress={onSaveWorkProgress} onDeleteWorkProgress={onDeleteWorkProgress} />
+      <WorkProgressSection orders={orders} workProgress={workProgress} onSaveWorkProgress={onSaveWorkProgress} onDeleteWorkProgress={onDeleteWorkProgress} displayDate={selectedDate || today} />
 
       <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.inkSoft }}>Log My Time</p>
 
