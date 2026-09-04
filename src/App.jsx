@@ -1335,6 +1335,23 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
         </div>
       )}
 
+      {order.status === "ready" && (
+        <div className="mb-2">
+          <button
+            onClick={async () => {
+              const firstName = (order.customerName || "").split(" ")[0] || "";
+              const message = `Hi${firstName ? ` ${firstName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${formatMoney(total)}.\n\nThere's a drop box at my front door where you can leave a payment. I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`;
+              try { await navigator.clipboard.writeText(message); } catch (e) {}
+              window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+            }}
+            className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wide underline"
+            style={{ color: COLORS.slate }}
+          >
+            <MessageCircle size={13} /> Ready for Pick Up
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <span className="font-body font-semibold text-base" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
         <select
