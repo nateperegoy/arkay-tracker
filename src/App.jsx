@@ -454,12 +454,14 @@ const emptyForm = {
   screenHardwareItem: "",
   screenHardwareQty: "",
   screenHardwareUnitPrice: "",
+  screenHardwareExtra: [],
   patioDoorCount: "",
   numPatioCustom: "",
   customPatioPrice: "",
   patioHardwareItem: "",
   patioHardwareQty: "",
   patioHardwareUnitPrice: "",
+  patioHardwareExtra: [],
   fullPatioReplacement: false,
   fullPatioReplacementPrice: "",
   metroStatus: "need_to_order",
@@ -514,12 +516,16 @@ function frameCostFor(form, rates) {
   return (Number(form.frameFeet) || 0) * frameRateFor(form.frameColor, rates);
 }
 
+function extraHardwareTotal(extra) {
+  return (extra || []).reduce((sum, h) => sum + (Number(h.qty) || 0) * (Number(h.unitPrice) || 0), 0);
+}
+
 function screenHardwareTotal(form) {
-  return (Number(form.screenHardwareQty) || 0) * (Number(form.screenHardwareUnitPrice) || 0);
+  return (Number(form.screenHardwareQty) || 0) * (Number(form.screenHardwareUnitPrice) || 0) + extraHardwareTotal(form.screenHardwareExtra);
 }
 
 function patioHardwareTotal(form) {
-  return (Number(form.patioHardwareQty) || 0) * (Number(form.patioHardwareUnitPrice) || 0);
+  return (Number(form.patioHardwareQty) || 0) * (Number(form.patioHardwareUnitPrice) || 0) + extraHardwareTotal(form.patioHardwareExtra);
 }
 
 // Plain-text, line-by-line price breakdown for a saved order — shared by the order card's
@@ -541,12 +547,17 @@ function buildItemizedLines(order, rates) {
     lines.push(`${feet} ft frame @ $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
   }
 
-  const screenHardware = screenHardwareTotal(order);
-  if (screenHardware > 0) {
-    const qty = Number(order.screenHardwareQty) || 0;
+  const mainScreenQty = Number(order.screenHardwareQty) || 0;
+  if (mainScreenQty > 0) {
     const unitPrice = Number(order.screenHardwareUnitPrice) || 0;
-    lines.push(`${qty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(screenHardware)}`);
+    lines.push(`${mainScreenQty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(mainScreenQty * unitPrice)}`);
   }
+  (order.screenHardwareExtra || []).forEach((h) => {
+    const qty = Number(h.qty) || 0;
+    if (qty <= 0) return;
+    const unitPrice = Number(h.unitPrice) || 0;
+    lines.push(`${qty} ${(h.item || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
+  });
 
   const standardPatio = Number(order.patioDoorCount) || 0;
   const customPatio = Number(order.numPatioCustom) || 0;
@@ -554,12 +565,17 @@ function buildItemizedLines(order, rates) {
   if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
   if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
 
-  const patioHardware = patioHardwareTotal(order);
-  if (patioHardware > 0) {
-    const qty = Number(order.patioHardwareQty) || 0;
+  const mainPatioQty = Number(order.patioHardwareQty) || 0;
+  if (mainPatioQty > 0) {
     const unitPrice = Number(order.patioHardwareUnitPrice) || 0;
-    lines.push(`${qty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(patioHardware)}`);
+    lines.push(`${mainPatioQty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(mainPatioQty * unitPrice)}`);
   }
+  (order.patioHardwareExtra || []).forEach((h) => {
+    const qty = Number(h.qty) || 0;
+    if (qty <= 0) return;
+    const unitPrice = Number(h.unitPrice) || 0;
+    lines.push(`${qty} ${(h.item || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
+  });
 
   if (order.fullPatioReplacement) {
     const amt = Number(order.fullPatioReplacementPrice) || 0;
@@ -584,8 +600,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const [error, setError] = useState("");
   const [showCustomScreen, setShowCustomScreen] = useState(!!(initialData && initialData.numScreensCustom));
   const [showCustomPatio, setShowCustomPatio] = useState(!!(initialData && initialData.numPatioCustom));
-  const [showScreenHardware, setShowScreenHardware] = useState(!!(initialData && initialData.screenHardwareQty));
-  const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && initialData.patioHardwareQty));
+  const [showScreenHardware, setShowScreenHardware] = useState(!!(initialData && (initialData.screenHardwareQty || (initialData.screenHardwareExtra || []).length > 0)));
+  const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && (initialData.patioHardwareQty || (initialData.patioHardwareExtra || []).length > 0)));
   const [copiedSummary, setCopiedSummary] = useState(false);
   // Number inputs otherwise let a scroll/trackpad gesture over a focused field silently change
   // its value while the person is just trying to scroll the page — blur on wheel to stop that.
@@ -648,9 +664,9 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
     if (parts.length > 0) segments.push(`$${Math.round(screenTotal)} for screen (${parts.join(" + ")})`);
     if (feet > 0) segments.push(`$${Math.round(frameTotal)} for frame (${feet}ft x $${frameRateFor(form.frameColor, rates)}/ft, ${form.frameColor})`);
     if (hardware > 0) {
-      const qty = Number(form.screenHardwareQty) || 0;
-      const unitPrice = Number(form.screenHardwareUnitPrice) || 0;
-      segments.push(`$${Math.round(hardware)} for ${form.screenHardwareItem.trim() || "hardware"} (${qty} x $${unitPrice}/ea)`);
+      const extraCount = (form.screenHardwareExtra || []).filter((h) => Number(h.qty) > 0).length;
+      const label = extraCount > 0 ? "hardware (multiple items)" : (form.screenHardwareItem.trim() || "hardware");
+      segments.push(`$${Math.round(hardware)} for ${label}`);
     }
     return segments.join(" + ");
   })();
@@ -667,9 +683,9 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
     const segments = [];
     if (parts.length > 0) segments.push(`$${Math.round(patioSubtotal - hardware)} for patio screens (${parts.join(" + ")})`);
     if (hardware > 0) {
-      const qty = Number(form.patioHardwareQty) || 0;
-      const unitPrice = Number(form.patioHardwareUnitPrice) || 0;
-      segments.push(`$${Math.round(hardware)} for ${form.patioHardwareItem.trim() || "hardware"} (${qty} x $${unitPrice}/ea)`);
+      const extraCount = (form.patioHardwareExtra || []).filter((h) => Number(h.qty) > 0).length;
+      const label = extraCount > 0 ? "hardware (multiple items)" : (form.patioHardwareItem.trim() || "hardware");
+      segments.push(`$${Math.round(hardware)} for ${label}`);
     }
     return segments.join(" + ");
   })();
@@ -677,43 +693,9 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   // Plain-text, line-by-line breakdown for copying straight into a text message —
   // same format as the read-only card's Job Summary, built live from the form as you type.
   const jobSummaryText = (() => {
-    const lines = [];
-    const standard = Number(form.numScreens) || 0;
-    const premium = Number(form.numScreensPremium) || 0;
-    const customScreens = Number(form.numScreensCustom) || 0;
-    const customScreenRate = Number(form.customScreenPrice) || 0;
-    if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
-    if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
-    if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
-    const feet = Number(form.frameFeet) || 0;
-    if (feet > 0) {
-      const frameRate = frameRateFor(form.frameColor, rates);
-      lines.push(`${feet} ft frame @ $${frameRate}/ft (${form.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
-    }
-    const screenHardware = screenHardwareTotal(form);
-    if (screenHardware > 0) {
-      const qty = Number(form.screenHardwareQty) || 0;
-      const unitPrice = Number(form.screenHardwareUnitPrice) || 0;
-      lines.push(`${qty} ${form.screenHardwareItem.trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(screenHardware)}`);
-    }
-    const standardPatio = Number(form.patioDoorCount) || 0;
-    const customPatio = Number(form.numPatioCustom) || 0;
-    const customPatioRate = Number(form.customPatioPrice) || 0;
-    if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
-    if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
-    const patioHardware = patioHardwareTotal(form);
-    if (patioHardware > 0) {
-      const qty = Number(form.patioHardwareQty) || 0;
-      const unitPrice = Number(form.patioHardwareUnitPrice) || 0;
-      lines.push(`${qty} ${form.patioHardwareItem.trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(patioHardware)}`);
-    }
-    if (form.fullPatioReplacement) {
-      const amt = Number(form.fullPatioReplacementPrice) || 0;
-      lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
-    }
+    const lines = buildItemizedLines(form, rates);
     const total = screenSubtotal + patioSubtotal + (form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0);
-    lines.push(`Total = $${Math.round(total)}`);
-    return lines.join("\n");
+    return [...lines, `Total = $${Math.round(total)}`].join("\n");
   })();
 
   const handleSubmit = (e) => {
@@ -739,10 +721,16 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         screenHardwareItem: form.screenHardwareItem.trim(),
         screenHardwareQty: Number(form.screenHardwareQty) || 0,
         screenHardwareUnitPrice: Number(form.screenHardwareUnitPrice) || 0,
+        screenHardwareExtra: (form.screenHardwareExtra || [])
+          .map((h) => ({ item: (h.item || "").trim(), qty: Number(h.qty) || 0, unitPrice: Number(h.unitPrice) || 0 }))
+          .filter((h) => h.qty > 0),
         patioHardwarePrice: patioHardwareTotal(form),
         patioHardwareItem: form.patioHardwareItem.trim(),
         patioHardwareQty: Number(form.patioHardwareQty) || 0,
         patioHardwareUnitPrice: Number(form.patioHardwareUnitPrice) || 0,
+        patioHardwareExtra: (form.patioHardwareExtra || [])
+          .map((h) => ({ item: (h.item || "").trim(), qty: Number(h.qty) || 0, unitPrice: Number(h.unitPrice) || 0 }))
+          .filter((h) => h.qty > 0),
         frameFeet: Number(form.frameFeet) || 0,
         screenPrice: screenSubtotal,
         patioDoorCount: Number(form.patioDoorCount) || 0,
@@ -901,6 +889,49 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                     <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.screenHardwareUnitPrice} onChange={set("screenHardwareUnitPrice")} placeholder="e.g. 5" />
                   </div>
                 </div>
+                {(form.screenHardwareExtra || []).map((h, i) => (
+                  <div key={i} className="pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className={labelCls} style={{ color: COLORS.inkSoft }}>Item</label>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.filter((_, idx) => idx !== i) }))}
+                        className="font-body text-xs underline"
+                        style={{ color: COLORS.inkSoft }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      type="text" className={inputCls} style={inputStyle} value={h.item} placeholder="e.g. Corner keys"
+                      onChange={(e) => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.map((x, idx) => (idx === i ? { ...x, item: e.target.value } : x)) }))}
+                    />
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
+                        <input
+                          type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
+                          onChange={(e) => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
+                        <input
+                          type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 5"
+                          onChange={(e) => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.map((x, idx) => (idx === i ? { ...x, unitPrice: e.target.value } : x)) }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, screenHardwareExtra: [...(f.screenHardwareExtra || []), { item: "", qty: "", unitPrice: "" }] }))}
+                  className="flex items-center gap-1.5 text-xs font-body underline mt-1"
+                  style={{ color: COLORS.slate }}
+                >
+                  <Plus size={12} /> Add another hardware item
+                </button>
               </div>
             )}
           </div>
@@ -979,6 +1010,49 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                     <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.patioHardwareUnitPrice} onChange={set("patioHardwareUnitPrice")} placeholder="e.g. 8" />
                   </div>
                 </div>
+                {(form.patioHardwareExtra || []).map((h, i) => (
+                  <div key={i} className="pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className={labelCls} style={{ color: COLORS.inkSoft }}>Item</label>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.filter((_, idx) => idx !== i) }))}
+                        className="font-body text-xs underline"
+                        style={{ color: COLORS.inkSoft }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      type="text" className={inputCls} style={inputStyle} value={h.item} placeholder="e.g. Rollers"
+                      onChange={(e) => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.map((x, idx) => (idx === i ? { ...x, item: e.target.value } : x)) }))}
+                    />
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
+                        <input
+                          type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
+                          onChange={(e) => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
+                        <input
+                          type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 8"
+                          onChange={(e) => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.map((x, idx) => (idx === i ? { ...x, unitPrice: e.target.value } : x)) }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, patioHardwareExtra: [...(f.patioHardwareExtra || []), { item: "", qty: "", unitPrice: "" }] }))}
+                  className="flex items-center gap-1.5 text-xs font-body underline mt-1"
+                  style={{ color: COLORS.slate }}
+                >
+                  <Plus size={12} /> Add another hardware item
+                </button>
               </div>
             )}
           </div>
