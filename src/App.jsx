@@ -1488,9 +1488,144 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 }
 
 /* ---------------------------------- TIME LOG SECTION ---------------------------------- */
+// "What I got done" — lets Nate log partial progress toward an order's items (e.g. "4 of 8
+// screens finished today"), separate from the hours-based time log below it. Defaults to
+// today's date since this is naturally an end-of-day activity, not something logged for past days.
+function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
+  const today = todayISO();
+  const [selectedOrderId, setSelectedOrderId] = useState("");
+  const [screensInput, setScreensInput] = useState("");
+  const [patioInput, setPatioInput] = useState("");
+
+  const activeOrders = orders
+    .filter((o) => o.status !== "closed" && o.status !== "picked_up")
+    .slice()
+    .sort((a, b) => (a.customerName || "").localeCompare(b.customerName || ""));
+
+  const selectedOrder = activeOrders.find((o) => o.id === selectedOrderId);
+  const totalScreens = selectedOrder ? (Number(selectedOrder.numScreens) || 0) + (Number(selectedOrder.numScreensCustom) || 0) : 0;
+  const totalPatio = selectedOrder ? (Number(selectedOrder.patioDoorCount) || 0) + (Number(selectedOrder.numPatioCustom) || 0) : 0;
+
+  // Sum of progress already logged for this order across all past entries, so Nate can see
+  // where he left off rather than guessing at cumulative progress from memory.
+  const priorEntries = selectedOrder ? workProgress.filter((p) => p.orderId === selectedOrder.id) : [];
+  const priorScreens = priorEntries.reduce((sum, p) => sum + (Number(p.screensCompleted) || 0), 0);
+  const priorPatio = priorEntries.reduce((sum, p) => sum + (Number(p.patioCompleted) || 0), 0);
+
+  const todaysEntries = workProgress.filter((p) => p.date === today);
+
+  const selectOrder = (id) => {
+    setSelectedOrderId(id);
+    setScreensInput("");
+    setPatioInput("");
+  };
+
+  const save = async () => {
+    if (!selectedOrder) return;
+    const screensCompleted = Number(screensInput) || 0;
+    const patioCompleted = Number(patioInput) || 0;
+    if (screensCompleted === 0 && patioCompleted === 0) return;
+    await onSaveWorkProgress({
+      id: uid(),
+      date: today,
+      orderId: selectedOrder.id,
+      screensCompleted,
+      patioCompleted,
+      createdAt: Date.now(),
+    });
+    selectOrder("");
+  };
+
+  return (
+    <div className="mb-6">
+      <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.inkSoft }}>What I Got Done</p>
+
+      {todaysEntries.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {todaysEntries.map((entry) => {
+            const o = orders.find((ord) => ord.id === entry.orderId);
+            return (
+              <div key={entry.id} className="rounded-xl border bg-white p-3 flex items-center justify-between gap-2" style={{ borderColor: COLORS.line }}>
+                <div>
+                  <p className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{o ? o.customerName : "Order no longer exists"}</p>
+                  <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>
+                    {entry.screensCompleted > 0 ? `${entry.screensCompleted} screen${entry.screensCompleted === 1 ? "" : "s"}` : ""}
+                    {entry.screensCompleted > 0 && entry.patioCompleted > 0 ? " · " : ""}
+                    {entry.patioCompleted > 0 ? `${entry.patioCompleted} patio door${entry.patioCompleted === 1 ? "" : "s"}` : ""}
+                  </p>
+                </div>
+                <button onClick={() => onDeleteWorkProgress(entry.id)} className="font-body text-xs underline shrink-0" style={{ color: COLORS.inkSoft }}>
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
+        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Order</label>
+        <select
+          value={selectedOrderId}
+          onChange={(e) => selectOrder(e.target.value)}
+          className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white mb-3"
+          style={{ borderColor: COLORS.line, color: COLORS.ink }}
+        >
+          <option value="">Choose an order…</option>
+          {activeOrders.map((o) => (
+            <option key={o.id} value={o.id}>{o.customerName}</option>
+          ))}
+        </select>
+
+        {selectedOrder && (
+          <>
+            {totalScreens > 0 && (
+              <div className="mb-3">
+                <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>
+                  Screens completed today {priorScreens > 0 ? `(${priorScreens} of ${totalScreens} already logged)` : `(out of ${totalScreens})`}
+                </label>
+                <input
+                  type="number" inputMode="numeric" min="0" max={totalScreens} placeholder="0"
+                  value={screensInput}
+                  onChange={(e) => setScreensInput(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
+                  style={{ borderColor: COLORS.line, color: COLORS.ink }}
+                />
+              </div>
+            )}
+            {totalPatio > 0 && (
+              <div className="mb-3">
+                <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>
+                  Patio doors completed today {priorPatio > 0 ? `(${priorPatio} of ${totalPatio} already logged)` : `(out of ${totalPatio})`}
+                </label>
+                <input
+                  type="number" inputMode="numeric" min="0" max={totalPatio} placeholder="0"
+                  value={patioInput}
+                  onChange={(e) => setPatioInput(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
+                  style={{ borderColor: COLORS.line, color: COLORS.ink }}
+                />
+              </div>
+            )}
+            <button onClick={save} className="font-display text-xs uppercase tracking-wide underline" style={{ color: COLORS.slate }}>
+              Save progress
+            </button>
+          </>
+        )}
+      </div>
+
+      {!selectedOrder && todaysEntries.length > 0 && (
+        <button onClick={() => selectOrder("")} className="font-body text-xs underline mt-2 block" style={{ color: COLORS.inkSoft }}>
+          + Add progress toward another order
+        </button>
+      )}
+    </div>
+  );
+}
+
 // Shows today (if not yet logged) plus any of the last 14 days still missing an entry, so a
 // missed day doesn't just get lost — each row logs independently.
-function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose }) {
+function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose, orders, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const today = todayISO();
   const [viewMonth, setViewMonth] = useState(() => {
     const d = new Date(today + "T00:00:00");
@@ -1527,6 +1662,10 @@ function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose }) {
 
   return (
     <Modal title="Save My Work" onClose={onClose}>
+      <WorkProgressSection orders={orders} workProgress={workProgress} onSaveWorkProgress={onSaveWorkProgress} onDeleteWorkProgress={onDeleteWorkProgress} />
+
+      <p className="font-display text-xs uppercase tracking-wide mb-2" style={{ color: COLORS.inkSoft }}>Log My Time</p>
+
       <div className="flex items-center justify-between mb-3">
         <button onClick={() => setViewMonth(new Date(year, month - 1, 1))} aria-label="Previous month">
           <ChevronLeft size={18} color={COLORS.inkSoft} />
@@ -1603,7 +1742,7 @@ function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose }) {
   );
 }
 
-function TimeLogSection({ timeLogs, onSaveLog }) {
+function TimeLogSection({ timeLogs, onSaveLog, orders, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const missingCount = getMissingTimeLogDays(timeLogs).length;
 
@@ -1631,7 +1770,7 @@ function TimeLogSection({ timeLogs, onSaveLog }) {
           <ChevronRight size={16} color={COLORS.inkSoft} />
         </span>
       </button>
-      {calendarOpen && <TimeLogCalendarModal timeLogs={timeLogs} onSaveLog={onSaveLog} onClose={() => setCalendarOpen(false)} />}
+      {calendarOpen && <TimeLogCalendarModal timeLogs={timeLogs} onSaveLog={onSaveLog} onClose={() => setCalendarOpen(false)} orders={orders} workProgress={workProgress} onSaveWorkProgress={onSaveWorkProgress} onDeleteWorkProgress={onDeleteWorkProgress} />}
     </>
   );
 }
@@ -1646,7 +1785,7 @@ function TimeLogSection({ timeLogs, onSaveLog }) {
 // "customer-submissions" key — never directly in the live order list — so an
 // unauthenticated website visitor can't create a real order without review.
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
-function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync }) {
+function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
@@ -2117,7 +2256,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
         )}
       </div>
 
-      <TimeLogSection timeLogs={timeLogs} onSaveLog={onSaveTimeLog} />
+      <TimeLogSection timeLogs={timeLogs} onSaveLog={onSaveTimeLog} orders={orders} workProgress={workProgress} onSaveWorkProgress={onSaveWorkProgress} onDeleteWorkProgress={onDeleteWorkProgress} />
 
       {viewingOrder && <OrderViewModal order={viewingOrder} rates={rates} onClose={() => setViewingOrder(null)} onEdit={onEditOrder} onDelete={onDeleteOrder} allOrders={orders} onLookupCustomer={onLookupCustomer} />}
 
@@ -4471,6 +4610,26 @@ function InternalTracker() {
       setSaveError(true);
     }
   };
+  const saveWorkProgress = async (entry) => {
+    const next = [...workProgress.filter((p) => p.id !== entry.id), entry];
+    setWorkProgress(next);
+    try {
+      const ok = await window.storage.set("work-progress", JSON.stringify(next), false);
+      setSaveError(!ok);
+    } catch (e) {
+      setSaveError(true);
+    }
+  };
+  const deleteWorkProgress = async (id) => {
+    const next = workProgress.filter((p) => p.id !== id);
+    setWorkProgress(next);
+    try {
+      const ok = await window.storage.set("work-progress", JSON.stringify(next), false);
+      setSaveError(!ok);
+    } catch (e) {
+      setSaveError(true);
+    }
+  };
   const saveMonthlyExpense = async (month, total) => {
     const next = [...monthlyExpenses.filter((m) => m.month !== month), { month, total }];
     setMonthlyExpenses(next);
@@ -4740,6 +4899,9 @@ function InternalTracker() {
             onAddTask={addManualTask}
             onCompleteTask={completeManualTask}
             onRetryTodoistSync={retryTodoistSync}
+            workProgress={workProgress}
+            onSaveWorkProgress={saveWorkProgress}
+            onDeleteWorkProgress={deleteWorkProgress}
           />
         ) : view === "complete" ? (
           <CompletePanel orders={orders} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} rates={rates} onLookupCustomer={lookupCustomer} />

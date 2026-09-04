@@ -13,6 +13,7 @@ const RECORD_TABLES = {
   "screen-orders": { table: "orders" },
   "customer-submissions": { table: "submissions" },
   "manual-tasks": { table: "manual_tasks" },
+  "work-progress": { table: "work_progress" },
 };
 
 // Tables with a genuinely simple, flat shape — one row per entry, no JSONB needed.
