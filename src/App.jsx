@@ -2689,7 +2689,7 @@ function buildMonthlyFinancials(orders, monthlyExpenses) {
   return [...map.values()].sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month));
 }
 
-function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
+function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
   const now = new Date();
   const [reportTab, setReportTab] = useState("overview");
   const [type, setType] = useState("monthly");
@@ -2795,6 +2795,26 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 
     return { totalHours, daysWorked, totalDaysInPeriod, perHour, perDayWorked, perDayOverall, avgHoursPerDayWorked, byDayOfWeek, weekdayWeekendPct, weeklyTrend };
   }, [timeLogs, range, stats.revenue]);
+
+  // Cross-references actual logged progress (from "What I Got Done") against hours logged for
+  // the same period, to get real efficiency figures — distinct from jobStats below, which only
+  // reflects order volume, not actual completion tracking.
+  const productivityStats = useMemo(() => {
+    const inRange = (workProgress || []).filter((p) => {
+      if (p.date < REPORTS_START_DATE) return false;
+      const d = new Date(p.date + "T00:00:00");
+      return d >= range.start && d <= range.end;
+    });
+    const screensCompleted = inRange.reduce((a, p) => a + (Number(p.screensCompleted) || 0), 0);
+    const patioCompleted = inRange.reduce((a, p) => a + (Number(p.patioCompleted) || 0), 0);
+    const totalDaysInPeriod = calendarDaysInRange(range.start, range.end);
+    const weeksInPeriod = totalDaysInPeriod / 7;
+    const minutesPerScreen = screensCompleted > 0 ? (timeStats.totalHours * 60) / screensCompleted : null;
+    const screensPerWeek = weeksInPeriod > 0 ? screensCompleted / weeksInPeriod : null;
+    const patioPerWeek = weeksInPeriod > 0 ? patioCompleted / weeksInPeriod : null;
+    const screensPerHour = timeStats.totalHours > 0 ? screensCompleted / timeStats.totalHours : null;
+    return { screensCompleted, patioCompleted, minutesPerScreen, screensPerWeek, patioPerWeek, screensPerHour };
+  }, [workProgress, range, timeStats.totalHours]);
 
   // Jobs tab: work-volume averages for the period.
   const jobStats = useMemo(() => {
@@ -3060,6 +3080,21 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
             <StatCard label="$ / hour" value={timeStats.perHour !== null ? formatMoney(timeStats.perHour) : "—"} accent={COLORS.sage} />
             <StatCard label="$ / day worked" value={timeStats.perDayWorked !== null ? formatMoney(timeStats.perDayWorked) : "—"} />
             <StatCard label="Avg hours / day worked" value={timeStats.avgHoursPerDayWorked !== null ? timeStats.avgHoursPerDayWorked.toFixed(1) : "—"} />
+          </div>
+
+          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Productivity — from What I Got Done</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <StatCard label="Screens completed" value={productivityStats.screensCompleted} />
+              <StatCard label="Patio doors completed" value={productivityStats.patioCompleted} />
+              <StatCard label="Minutes / screen" value={productivityStats.minutesPerScreen !== null ? productivityStats.minutesPerScreen.toFixed(0) : "—"} />
+              <StatCard label="Screens / week" value={productivityStats.screensPerWeek !== null ? productivityStats.screensPerWeek.toFixed(1) : "—"} />
+              <StatCard label="Patio doors / week" value={productivityStats.patioPerWeek !== null ? productivityStats.patioPerWeek.toFixed(1) : "—"} />
+              <StatCard label="Screens / hour" value={productivityStats.screensPerHour !== null ? productivityStats.screensPerHour.toFixed(1) : "—"} />
+            </div>
+            <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
+              Based only on progress actually logged in "What I Got Done" — a day with hours logged but no completion entries won't count toward these, so they may run lower than reality until logging becomes a habit.
+            </p>
           </div>
           <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
             <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Zoomed out — whole period, including days off</p>
@@ -5060,7 +5095,7 @@ function InternalTracker() {
         ) : view === "complete" ? (
           <CompletePanel orders={orders} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} rates={rates} onLookupCustomer={lookupCustomer} />
         ) : (
-          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} />
+          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} workProgress={workProgress} />
         )}
 
         {saveError && (
