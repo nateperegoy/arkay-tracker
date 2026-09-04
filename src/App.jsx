@@ -3279,13 +3279,36 @@ function QuickLinksPanel({ rates, orders }) {
     },
   ];
 
-  const copy = async (key, value) => {
+  const buildOrderSummary = (order) => {
+    if (!order) return "";
+    const lines = [order.customerName];
+    const totalScreens = (Number(order.numScreens) || 0) + (Number(order.numScreensCustom) || 0);
+    const totalPatio = (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0);
+    if (totalScreens > 0) {
+      const screenLine = Number(order.numScreens) > 0
+        ? `${order.numScreens} screens${Number(order.numScreensCustom) > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
+        : `${order.numScreensCustom} custom screen${Number(order.numScreensCustom) === 1 ? "" : "s"}`;
+      lines.push(screenLine + (Number(order.frameFeet) > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""));
+    }
+    if (totalPatio > 0) {
+      const patioLine = Number(order.patioDoorCount) > 0
+        ? `${order.patioDoorCount} patio door screen(s)${Number(order.numPatioCustom) > 0 ? ` (+${order.numPatioCustom} custom)` : ""}`
+        : `${order.numPatioCustom} custom patio door screen${Number(order.numPatioCustom) === 1 ? "" : "s"}`;
+      lines.push(patioLine);
+    }
+    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+    lines.push(`Total: ${formatMoney(total)}`);
+    return lines.join("\n");
+  };
+
+  const copy = async (key, value, isShort) => {
+    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+    const fullValue = selectedOrder && !isShort ? `${value}\n\n---\n${buildOrderSummary(selectedOrder)}` : value;
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(fullValue);
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
     } catch (e) {}
-    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
     if (selectedOrder && selectedOrder.phone) {
       window.open(voiceLink(selectedOrder.phone), "_blank", "noopener,noreferrer");
     }
@@ -3332,9 +3355,11 @@ function QuickLinksPanel({ rates, orders }) {
       {items.map((item) => (
         <div key={item.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
           <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{item.label}</p>
-          <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : "whitespace-pre-line"}`} style={{ color: COLORS.inkSoft }}>{item.value}</p>
+          <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : "whitespace-pre-line"}`} style={{ color: COLORS.inkSoft }}>
+            {item.short || !orders.find((o) => o.id === selectedOrderId) ? item.value : `${item.value}\n\n---\n${buildOrderSummary(orders.find((o) => o.id === selectedOrderId))}`}
+          </p>
           <button
-            onClick={() => copy(item.key, item.value)}
+            onClick={() => copy(item.key, item.value, item.short)}
             className="font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
           >
