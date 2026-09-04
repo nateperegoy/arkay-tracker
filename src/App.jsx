@@ -3285,6 +3285,10 @@ function QuickLinksPanel({ rates, orders }) {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
     } catch (e) {}
+    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+    if (selectedOrder && selectedOrder.phone) {
+      window.open(voiceLink(selectedOrder.phone), "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -3334,7 +3338,13 @@ function QuickLinksPanel({ rates, orders }) {
             className="font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
           >
-            {copiedKey === item.key ? "Copied!" : item.short ? "Copy link" : "Copy message"}
+            {copiedKey === item.key
+              ? "Copied!"
+              : orders.find((o) => o.id === selectedOrderId)?.phone
+              ? "Copy & Open Voice"
+              : item.short
+              ? "Copy link"
+              : "Copy message"}
           </button>
         </div>
       ))}
