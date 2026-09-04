@@ -522,6 +522,53 @@ function patioHardwareTotal(form) {
   return (Number(form.patioHardwareQty) || 0) * (Number(form.patioHardwareUnitPrice) || 0);
 }
 
+// Plain-text, line-by-line price breakdown for a saved order — shared by the order card's
+// "Ready for Pick Up" button and the Quick Links panel, so both stay in sync automatically.
+function buildItemizedLines(order, rates) {
+  const lines = [];
+
+  const standard = Number(order.numScreens) || 0;
+  const premium = Number(order.numScreensPremium) || 0;
+  const customScreens = Number(order.numScreensCustom) || 0;
+  const customScreenRate = Number(order.customScreenPrice) || 0;
+  if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
+  if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
+  if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
+
+  const feet = Number(order.frameFeet) || 0;
+  if (feet > 0) {
+    const frameRate = frameRateFor(order.frameColor, rates);
+    lines.push(`${feet} ft frame @ $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
+  }
+
+  const screenHardware = screenHardwareTotal(order);
+  if (screenHardware > 0) {
+    const qty = Number(order.screenHardwareQty) || 0;
+    const unitPrice = Number(order.screenHardwareUnitPrice) || 0;
+    lines.push(`${qty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(screenHardware)}`);
+  }
+
+  const standardPatio = Number(order.patioDoorCount) || 0;
+  const customPatio = Number(order.numPatioCustom) || 0;
+  const customPatioRate = Number(order.customPatioPrice) || 0;
+  if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
+  if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
+
+  const patioHardware = patioHardwareTotal(order);
+  if (patioHardware > 0) {
+    const qty = Number(order.patioHardwareQty) || 0;
+    const unitPrice = Number(order.patioHardwareUnitPrice) || 0;
+    lines.push(`${qty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(patioHardware)}`);
+  }
+
+  if (order.fullPatioReplacement) {
+    const amt = Number(order.fullPatioReplacementPrice) || 0;
+    lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
+  }
+
+  return lines;
+}
+
 function autoScreenSubtotal(form, rates) {
   return autoScreenPrice(form, rates) + frameCostFor(form, rates) + screenHardwareTotal(form);
 }
@@ -1340,7 +1387,8 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
           <button
             onClick={async () => {
               const firstName = (order.customerName || "").split(" ")[0] || "";
-              const message = `Hi${firstName ? ` ${firstName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${formatMoney(total)}.\n\nThere's a drop box at my front door where you can leave a payment. I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`;
+              const itemizedText = buildItemizedLines(order, rates).join("\n");
+              const message = `Hi${firstName ? ` ${firstName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${formatMoney(total)}.\n${itemizedText}\n\nThere's a drop box at my front door where you can leave a payment. I take Venmo, Zelle and check but I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`;
               try { await navigator.clipboard.writeText(message); } catch (e) {}
               window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
             }}
@@ -3240,6 +3288,9 @@ function QuickLinksPanel({ rates, orders }) {
     setOrderTotal(total > 0 ? String(total) : "");
   };
 
+  const selectedOrderForItems = orders.find((o) => o.id === selectedOrderId);
+  const itemizedText = selectedOrderForItems ? buildItemizedLines(selectedOrderForItems, rates).join("\n") : "[itemized list]";
+
   const items = [
     {
       key: "guide",
@@ -3260,7 +3311,7 @@ function QuickLinksPanel({ rates, orders }) {
     {
       key: "readyForPickup",
       label: "Ready for Pick Up",
-      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${orderTotal.trim() ? `$${orderTotal.trim()}` : "[insert total]"}.\n\nThere's a drop box at my front door where you can leave a payment. I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`,
+      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${orderTotal.trim() ? `$${orderTotal.trim()}` : "[insert total]"}.\n${itemizedText}\n\nThere's a drop box at my front door where you can leave a payment. I take Venmo, Zelle and check but I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`,
     },
     {
       key: "sendReviewAgreed",
@@ -3279,61 +3330,13 @@ function QuickLinksPanel({ rates, orders }) {
     },
   ];
 
-  const buildOrderSummary = (order) => {
-    if (!order) return "";
-    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
-    const lines = [order.customerName, `Your total is ($${Math.round(total)})`];
-
-    const standard = Number(order.numScreens) || 0;
-    const premium = Number(order.numScreensPremium) || 0;
-    const customScreens = Number(order.numScreensCustom) || 0;
-    const customScreenRate = Number(order.customScreenPrice) || 0;
-    if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
-    if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
-    if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
-
-    const feet = Number(order.frameFeet) || 0;
-    if (feet > 0) {
-      const frameRate = frameRateFor(order.frameColor, rates);
-      lines.push(`${feet} ft frame @ $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
-    }
-
-    const screenHardware = screenHardwareTotal(order);
-    if (screenHardware > 0) {
-      const qty = Number(order.screenHardwareQty) || 0;
-      const unitPrice = Number(order.screenHardwareUnitPrice) || 0;
-      lines.push(`${qty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(screenHardware)}`);
-    }
-
-    const standardPatio = Number(order.patioDoorCount) || 0;
-    const customPatio = Number(order.numPatioCustom) || 0;
-    const customPatioRate = Number(order.customPatioPrice) || 0;
-    if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
-    if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
-
-    const patioHardware = patioHardwareTotal(order);
-    if (patioHardware > 0) {
-      const qty = Number(order.patioHardwareQty) || 0;
-      const unitPrice = Number(order.patioHardwareUnitPrice) || 0;
-      lines.push(`${qty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(patioHardware)}`);
-    }
-
-    if (order.fullPatioReplacement) {
-      const amt = Number(order.fullPatioReplacementPrice) || 0;
-      lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
-    }
-
-    return lines.join("\n");
-  };
-
-  const copy = async (key, value, isShort) => {
-    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
-    const fullValue = selectedOrder && !isShort ? `${value}\n\n---\n${buildOrderSummary(selectedOrder)}` : value;
+  const copy = async (key, value) => {
     try {
-      await navigator.clipboard.writeText(fullValue);
+      await navigator.clipboard.writeText(value);
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
     } catch (e) {}
+    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
     if (selectedOrder && selectedOrder.phone) {
       window.open(voiceLink(selectedOrder.phone), "_blank", "noopener,noreferrer");
     }
@@ -3381,10 +3384,10 @@ function QuickLinksPanel({ rates, orders }) {
         <div key={item.key} className="rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
           <p className="font-body text-sm font-semibold mb-1" style={{ color: COLORS.ink }}>{item.label}</p>
           <p className={`font-body text-xs mb-2 ${item.short ? "truncate" : "whitespace-pre-line"}`} style={{ color: COLORS.inkSoft }}>
-            {item.short || !orders.find((o) => o.id === selectedOrderId) ? item.value : `${item.value}\n\n---\n${buildOrderSummary(orders.find((o) => o.id === selectedOrderId))}`}
+            {item.value}
           </p>
           <button
-            onClick={() => copy(item.key, item.value, item.short)}
+            onClick={() => copy(item.key, item.value)}
             className="font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
           >
