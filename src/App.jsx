@@ -3204,6 +3204,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 function QuickLinksPanel({ rates }) {
   const [copiedKey, setCopiedKey] = useState(null);
   const [customerName, setCustomerName] = useState("");
+  const [orderTotal, setOrderTotal] = useState("");
   const trimmedName = customerName.trim();
 
   const items = [
@@ -3222,6 +3223,11 @@ function QuickLinksPanel({ rates }) {
       key: "pricingFull",
       label: "Full Info (Pricing, Pickup, Payment)",
       value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, larger screens are $${rates.screenPremium - rates.screen} more and standard patio door screens (if needed) are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
+    },
+    {
+      key: "readyForPickup",
+      label: "Ready for Pick Up",
+      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${orderTotal.trim() ? `$${orderTotal.trim()}` : "[insert total]"}.\n\nThere's a drop box at my front door where you can leave a payment. I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`,
     },
     {
       key: "sendReviewAgreed",
@@ -3251,12 +3257,23 @@ function QuickLinksPanel({ rates }) {
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Customer name (for review messages)</label>
+        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Customer name (for review and pickup messages)</label>
         <input
           type="text"
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
           placeholder="First name"
+          className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
+          style={{ borderColor: COLORS.line, color: COLORS.ink }}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Order total (for pickup message)</label>
+        <input
+          type="number" inputMode="decimal" min="0" step="0.01"
+          value={orderTotal}
+          onChange={(e) => setOrderTotal(e.target.value)}
+          placeholder="e.g. 113"
           className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
           style={{ borderColor: COLORS.line, color: COLORS.ink }}
         />
