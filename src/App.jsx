@@ -2101,57 +2101,61 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                   const linkedOrder = orders.find((o) => o.id === task.orderId);
                   const isOverdue = task.dueDate < todayISO();
                   return (
-                    <div key={task.id} className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3" style={{ borderColor: COLORS.line }}>
-                      <span className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: TASK_TAGS.myTask.soft, color: TASK_TAGS.myTask.color }}>
+                    <div key={task.id} className="rounded-xl border bg-white p-3 space-y-2" style={{ borderColor: COLORS.line }}>
+                      <span className="inline-block font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: TASK_TAGS.myTask.soft, color: TASK_TAGS.myTask.color }}>
                         {TASK_TAGS.myTask.label}
                       </span>
-                      <div className="flex-1 min-w-[120px]">
-                        <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{task.description}</p>
+                      <div>
+                        <p className="font-display text-sm" style={{ color: COLORS.ink }}>{task.description}</p>
                         {linkedOrder && <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{linkedOrder.customerName}</p>}
                       </div>
-                      <span className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
-                        Due {formatDate(task.dueDate)}{isOverdue ? " — overdue" : ""}
-                      </span>
-                      {task.todoistStatus === "pending" && (
-                        <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.inkSoft }}>
-                          <Loader2 size={11} className="animate-spin" /> Syncing
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
+                          Due {formatDate(task.dueDate)}{isOverdue ? " — overdue" : ""}
                         </span>
-                      )}
-                      {task.todoistStatus === "synced" && (
-                        <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.sage }} title="Added to Todoist">
-                          <CheckCircle2 size={12} /> Todoist
-                        </span>
-                      )}
-                      {task.todoistStatus === "failed" && (
+                        {task.todoistStatus === "pending" && (
+                          <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.inkSoft }}>
+                            <Loader2 size={11} className="animate-spin" /> Syncing
+                          </span>
+                        )}
+                        {task.todoistStatus === "synced" && (
+                          <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.sage }} title="Added to Todoist">
+                            <CheckCircle2 size={12} /> Todoist
+                          </span>
+                        )}
+                        {task.todoistStatus === "failed" && (
+                          <button
+                            onClick={() => onRetryTodoistSync(task.id, task.description, task.dueDate)}
+                            className="font-body text-xs underline"
+                            style={{ color: COLORS.stamp }}
+                            title="Couldn't reach Todoist — tap to retry"
+                          >
+                            Todoist sync failed — retry
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {task.phone && (
+                          <button
+                            onClick={async () => {
+                              const message = `Here's a quick guide to help you measure your window screen: ${MEASURING_GUIDE_LINK}`;
+                              try { await navigator.clipboard.writeText(message); } catch (e) {}
+                              window.open(voiceLink(task.phone), "_blank", "noopener,noreferrer");
+                            }}
+                            className="font-display text-xs uppercase tracking-wide underline"
+                            style={{ color: COLORS.slate }}
+                          >
+                            Send Guide
+                          </button>
+                        )}
                         <button
-                          onClick={() => onRetryTodoistSync(task.id, task.description, task.dueDate)}
-                          className="font-body text-xs underline"
-                          style={{ color: COLORS.stamp }}
-                          title="Couldn't reach Todoist — tap to retry"
-                        >
-                          Todoist sync failed — retry
-                        </button>
-                      )}
-                      {task.phone && (
-                        <button
-                          onClick={async () => {
-                            const message = `Here's a quick guide to help you measure your window screen: ${MEASURING_GUIDE_LINK}`;
-                            try { await navigator.clipboard.writeText(message); } catch (e) {}
-                            window.open(voiceLink(task.phone), "_blank", "noopener,noreferrer");
-                          }}
+                          onClick={() => onCompleteTask(task.id)}
                           className="font-display text-xs uppercase tracking-wide underline"
                           style={{ color: COLORS.slate }}
                         >
-                          Send Guide
+                          Done
                         </button>
-                      )}
-                      <button
-                        onClick={() => onCompleteTask(task.id)}
-                        className="font-display text-xs uppercase tracking-wide underline"
-                        style={{ color: COLORS.slate }}
-                      >
-                        Done
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
