@@ -1563,7 +1563,7 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
   const [patioInput, setPatioInput] = useState("");
 
   const activeOrders = orders
-    .filter((o) => o.status !== "closed" && o.status !== "picked_up")
+    .filter((o) => o.status !== "closed" && o.status !== "picked_up" && o.status !== "ready")
     .slice()
     .sort((a, b) => (a.customerName || "").localeCompare(b.customerName || ""));
 
