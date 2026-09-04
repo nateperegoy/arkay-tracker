@@ -2179,9 +2179,20 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                           Due {formatDate(task.dueDate)}{isOverdue ? " — overdue" : ""}
                         </span>
                         {task.todoistStatus === "pending" && (
-                          <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.inkSoft }}>
-                            <Loader2 size={11} className="animate-spin" /> Syncing
-                          </span>
+                          Date.now() - (task.createdAt || 0) > 30000 ? (
+                            <button
+                              onClick={() => onRetryTodoistSync(task.id, task.description, task.dueDate)}
+                              className="font-body text-xs underline"
+                              style={{ color: COLORS.stamp }}
+                              title="This got stuck mid-sync — tap to retry"
+                            >
+                              Todoist sync stuck — retry
+                            </button>
+                          ) : (
+                            <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.inkSoft }}>
+                              <Loader2 size={11} className="animate-spin" /> Syncing
+                            </span>
+                          )
                         )}
                         {task.todoistStatus === "synced" && (
                           <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.sage }} title="Added to Todoist">
@@ -4783,6 +4794,7 @@ function InternalTracker() {
   // Local task always saves first and immediately, regardless of what happens next — Todoist
   // sync is a best-effort add-on, never a blocker for the tracker's own task list.
   const syncTaskToTodoist = async (taskId, description, dueDate) => {
+    let resolvedStatus;
     try {
       const response = await fetch("/api/todoist-sync", {
         method: "POST",
@@ -4790,18 +4802,21 @@ function InternalTracker() {
         body: JSON.stringify({ description, dueDate }),
       });
       const data = await response.json().catch(() => ({}));
-      setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: response.ok && data.success ? "synced" : "failed" } : t)));
+      resolvedStatus = response.ok && data.success ? "synced" : "failed";
     } catch (e) {
-      setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: "failed" } : t)));
+      resolvedStatus = "failed";
     }
+    const next = manualTasks.map((t) => (t.id === taskId ? { ...t, todoistStatus: resolvedStatus } : t));
+    await persistManualTasks(next);
   };
   const addManualTask = (orderId, description, dueDate) => {
     const newTask = { id: uid(), orderId, description, dueDate, createdAt: Date.now(), todoistStatus: "pending" };
     persistManualTasks([...manualTasks, newTask]);
     syncTaskToTodoist(newTask.id, description, dueDate);
   };
-  const retryTodoistSync = (taskId, description, dueDate) => {
-    setManualTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, todoistStatus: "pending" } : t)));
+  const retryTodoistSync = async (taskId, description, dueDate) => {
+    const next = manualTasks.map((t) => (t.id === taskId ? { ...t, todoistStatus: "pending" } : t));
+    await persistManualTasks(next);
     syncTaskToTodoist(taskId, description, dueDate);
   };
   const completeManualTask = (id) => {
