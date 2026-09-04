@@ -1275,14 +1275,20 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
                 {row("Frame", `${order.frameFeet || 0} ft · ${order.frameColor || "White"}${order.frameThickness && order.frameThickness !== "None" ? ` · ${order.frameThickness}` : ""}`)}
               </>
             )}
-            {Number(order.screenHardwarePrice) > 0 && row(`${order.screenHardwareItem || "Hardware"} (${order.screenHardwareQty || 0} @ $${order.screenHardwareUnitPrice || 0}/ea)`, formatMoney(order.screenHardwarePrice))}
+            {Number(order.screenHardwareQty) > 0 && row(`${order.screenHardwareItem || "Hardware"} (${order.screenHardwareQty} @ $${order.screenHardwareUnitPrice || 0}/ea)`, formatMoney(Number(order.screenHardwareQty) * Number(order.screenHardwareUnitPrice || 0)))}
+            {(order.screenHardwareExtra || []).map((h, i) => (
+              Number(h.qty) > 0 && <React.Fragment key={i}>{row(`${h.item || "Hardware"} (${h.qty} @ $${h.unitPrice || 0}/ea)`, formatMoney(Number(h.qty) * Number(h.unitPrice || 0)))}</React.Fragment>
+            ))}
             {(order.patioDoorCount > 0 || order.numPatioCustom > 0) && (
               <>
                 {row("Patio door screens", order.patioDoorCount)}
                 {order.numPatioCustom > 0 && row(`At custom price`, `${order.numPatioCustom} @ $${order.customPatioPrice}/ea`)}
               </>
             )}
-            {Number(order.patioHardwarePrice) > 0 && row(`${order.patioHardwareItem || "Hardware"} (${order.patioHardwareQty || 0} @ $${order.patioHardwareUnitPrice || 0}/ea)`, formatMoney(order.patioHardwarePrice))}
+            {Number(order.patioHardwareQty) > 0 && row(`${order.patioHardwareItem || "Hardware"} (${order.patioHardwareQty} @ $${order.patioHardwareUnitPrice || 0}/ea)`, formatMoney(Number(order.patioHardwareQty) * Number(order.patioHardwareUnitPrice || 0)))}
+            {(order.patioHardwareExtra || []).map((h, i) => (
+              Number(h.qty) > 0 && <React.Fragment key={i}>{row(`${h.item || "Hardware"} (${h.qty} @ $${h.unitPrice || 0}/ea)`, formatMoney(Number(h.qty) * Number(h.unitPrice || 0)))}</React.Fragment>
+            ))}
             {order.fullPatioReplacement && (
               <>
                 {row("Whole door replacement", order.fullPatioReplacementPrice ? formatMoney(order.fullPatioReplacementPrice) : "Price pending")}
