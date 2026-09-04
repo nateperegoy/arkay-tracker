@@ -3282,22 +3282,48 @@ function QuickLinksPanel({ rates, orders }) {
   const buildOrderSummary = (order) => {
     if (!order) return "";
     const lines = [order.customerName];
-    const totalScreens = (Number(order.numScreens) || 0) + (Number(order.numScreensCustom) || 0);
-    const totalPatio = (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0);
-    if (totalScreens > 0) {
-      const screenLine = Number(order.numScreens) > 0
-        ? `${order.numScreens} screens${Number(order.numScreensCustom) > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
-        : `${order.numScreensCustom} custom screen${Number(order.numScreensCustom) === 1 ? "" : "s"}`;
-      lines.push(screenLine + (Number(order.frameFeet) > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""));
+
+    const standard = Number(order.numScreens) || 0;
+    const premium = Number(order.numScreensPremium) || 0;
+    const customScreens = Number(order.numScreensCustom) || 0;
+    const customScreenRate = Number(order.customScreenPrice) || 0;
+    if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
+    if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
+    if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
+
+    const feet = Number(order.frameFeet) || 0;
+    if (feet > 0) {
+      const frameRate = frameRateFor(order.frameColor, rates);
+      lines.push(`${feet} ft frame @ $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
     }
-    if (totalPatio > 0) {
-      const patioLine = Number(order.patioDoorCount) > 0
-        ? `${order.patioDoorCount} patio door screen(s)${Number(order.numPatioCustom) > 0 ? ` (+${order.numPatioCustom} custom)` : ""}`
-        : `${order.numPatioCustom} custom patio door screen${Number(order.numPatioCustom) === 1 ? "" : "s"}`;
-      lines.push(patioLine);
+
+    const screenHardware = screenHardwareTotal(order);
+    if (screenHardware > 0) {
+      const qty = Number(order.screenHardwareQty) || 0;
+      const unitPrice = Number(order.screenHardwareUnitPrice) || 0;
+      lines.push(`${qty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(screenHardware)}`);
     }
+
+    const standardPatio = Number(order.patioDoorCount) || 0;
+    const customPatio = Number(order.numPatioCustom) || 0;
+    const customPatioRate = Number(order.customPatioPrice) || 0;
+    if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
+    if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
+
+    const patioHardware = patioHardwareTotal(order);
+    if (patioHardware > 0) {
+      const qty = Number(order.patioHardwareQty) || 0;
+      const unitPrice = Number(order.patioHardwareUnitPrice) || 0;
+      lines.push(`${qty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(patioHardware)}`);
+    }
+
+    if (order.fullPatioReplacement) {
+      const amt = Number(order.fullPatioReplacementPrice) || 0;
+      lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
+    }
+
     const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
-    lines.push(`Total: ${formatMoney(total)}`);
+    lines.push(`Total = $${Math.round(total)}`);
     return lines.join("\n");
   };
 
