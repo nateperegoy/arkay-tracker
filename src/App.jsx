@@ -3281,7 +3281,8 @@ function QuickLinksPanel({ rates, orders }) {
 
   const buildOrderSummary = (order) => {
     if (!order) return "";
-    const lines = [order.customerName];
+    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+    const lines = [`Your total is $${Math.round(total)}`];
 
     const standard = Number(order.numScreens) || 0;
     const premium = Number(order.numScreensPremium) || 0;
@@ -3322,8 +3323,6 @@ function QuickLinksPanel({ rates, orders }) {
       lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
     }
 
-    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
-    lines.push(`Total = $${Math.round(total)}`);
     return lines.join("\n");
   };
 
