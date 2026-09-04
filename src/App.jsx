@@ -3218,11 +3218,27 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses }) {
 // in the app, for whenever a customer asks something mid-conversation rather than through an
 // existing task or order. Pricing figures pull from the real, current rates so this never goes
 // stale if rates are ever adjusted in Shop Settings.
-function QuickLinksPanel({ rates }) {
+function QuickLinksPanel({ rates, orders }) {
   const [copiedKey, setCopiedKey] = useState(null);
   const [customerName, setCustomerName] = useState("");
   const [orderTotal, setOrderTotal] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState("");
   const trimmedName = customerName.trim();
+
+  const openOrders = orders
+    .filter((o) => o.status !== "closed")
+    .slice()
+    .sort((a, b) => (a.customerName || "").localeCompare(b.customerName || ""));
+
+  const selectOrder = (id) => {
+    setSelectedOrderId(id);
+    if (!id) return;
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+    setCustomerName((order.customerName || "").split(" ")[0] || "");
+    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+    setOrderTotal(total > 0 ? String(total) : "");
+  };
 
   const items = [
     {
@@ -3273,6 +3289,20 @@ function QuickLinksPanel({ rates }) {
 
   return (
     <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Fill in from an order</label>
+        <select
+          value={selectedOrderId}
+          onChange={(e) => selectOrder(e.target.value)}
+          className="w-full rounded-md border px-3 py-2 text-sm font-body bg-white"
+          style={{ borderColor: COLORS.line, color: COLORS.ink }}
+        >
+          <option value="">Choose an order (optional)…</option>
+          {openOrders.map((o) => (
+            <option key={o.id} value={o.id}>{o.customerName}</option>
+          ))}
+        </select>
+      </div>
       <div>
         <label className="block text-xs font-body font-semibold mb-1" style={{ color: COLORS.inkSoft }}>Customer name (for review and pickup messages)</label>
         <input
@@ -4976,7 +5006,7 @@ function InternalTracker() {
 
       {quickLinksOpen && (
         <Modal title="Quick Links" onClose={() => setQuickLinksOpen(false)}>
-          <QuickLinksPanel rates={rates} />
+          <QuickLinksPanel rates={rates} orders={orders} />
         </Modal>
       )}
 
