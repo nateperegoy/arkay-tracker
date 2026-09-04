@@ -1276,17 +1276,19 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
       <div className="my-3 border-t" style={dividerStyle} />
 
       <div className="space-y-2 font-body text-sm">
-        <div className="flex items-center justify-between text-xs" style={{ color: COLORS.inkSoft }}>
-          <span>Dropped off {formatDate(order.dropOffDate)}</span>
-          <span>
-            {order.status === "picked_up" && order.pickupDate
-              ? `Picked up ${formatDate(order.pickupDate)}`
-              : order.pickupDate
-              ? `Pickup scheduled ${formatDate(order.pickupDate)}`
-              : order.completionDate
-              ? `Ready ${formatDate(order.completionDate)}`
-              : ""}
-          </span>
+        <div className="space-y-0.5 text-xs" style={{ color: COLORS.inkSoft }}>
+          <p>Dropped off {formatDate(order.dropOffDate)}</p>
+          {(order.pickupDate || order.completionDate) && (
+            <p>
+              {order.status === "picked_up" && order.pickupDate
+                ? `Picked up ${formatDate(order.pickupDate)}`
+                : order.pickupDate
+                ? `Pickup scheduled ${formatDate(order.pickupDate)}`
+                : order.completionDate
+                ? `Ready ${formatDate(order.completionDate)}`
+                : ""}
+            </p>
+          )}
         </div>
         {(order.numScreens > 0 || order.numScreensCustom > 0) && (
           <div className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
@@ -4309,6 +4311,7 @@ function InternalTracker() {
   const [timeLogs, setTimeLogs] = useState([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState([]);
   const [manualTasks, setManualTasks] = useState([]);
+  const [workProgress, setWorkProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
   const [view, setView] = useState("requests");
@@ -4372,6 +4375,12 @@ function InternalTracker() {
         if (taskResult && taskResult.value) setManualTasks(JSON.parse(taskResult.value));
       } catch (e) {
         setManualTasks([]);
+      }
+      try {
+        const progressResult = await window.storage.get("work-progress", false);
+        if (progressResult && progressResult.value) setWorkProgress(JSON.parse(progressResult.value));
+      } catch (e) {
+        setWorkProgress([]);
       }
       if (purgedOrders) {
         try {
