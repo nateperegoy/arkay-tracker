@@ -1524,7 +1524,7 @@ function TimeLogCalendarModal({ timeLogs, onSaveLog, onClose }) {
   };
 
   return (
-    <Modal title="Log My Time" onClose={onClose}>
+    <Modal title="Save My Work" onClose={onClose}>
       <div className="flex items-center justify-between mb-3">
         <button onClick={() => setViewMonth(new Date(year, month - 1, 1))} aria-label="Previous month">
           <ChevronLeft size={18} color={COLORS.inkSoft} />
@@ -1613,7 +1613,7 @@ function TimeLogSection({ timeLogs, onSaveLog }) {
         style={{ background: COLORS.canvasDark }}
       >
         <span className="font-display text-sm uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.ink }}>
-          <Clock size={13} color={COLORS.ink} /> Log My Time
+          <Clock size={13} color={COLORS.ink} /> Save My Work
         </span>
         <span className="flex items-center gap-2">
           {missingCount > 0 ? (
