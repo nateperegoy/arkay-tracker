@@ -352,8 +352,15 @@ function calendarDaysInRange(start, end) {
 // this matches how income is really recognized for tax/bookkeeping purposes. Falls back to
 // drop-off date for any order that hasn't been picked up yet, so in-progress work still shows
 // up somewhere rather than disappearing from Reports entirely until it's fully wrapped up.
-function reportAnchorDate(order) {
-  return order.pickupDate || order.dropOffDate;
+// Jobs are counted by completion date (when the work was actually finished), not drop-off —
+// an order without a completion date yet simply doesn't count as a completed job.
+function jobAnchorDate(order) {
+  return order.completionDate || null;
+}
+// Revenue is counted by pickup date (when the customer actually paid and picked up), not
+// completion — an order without a pickup date yet hasn't actually generated collected revenue.
+function revenueAnchorDate(order) {
+  return order.pickupDate || null;
 }
 
 const BUSINESS_ADDRESS = "514 E. Irish Ave, Littleton, CO 80122";
@@ -1513,30 +1520,34 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     const s = statusById[order.status] || STATUSES[0];
     const { isOverdue, showDue } = getOrderTiming(order, rates);
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
-        <div className="flex-1 min-w-[140px]">
+      <div className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
+        <div>
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
-        <CategoryIcons order={order} />
-        <div className="text-xs font-body text-right" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
-          {order.daysOpen}d open{showDue && isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <CategoryIcons order={order} />
+          <span className="text-xs font-body" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
+            {order.daysOpen}d open{showDue && isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
+          </span>
+          <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>{order.frameColor || "White"}</span>
+          {order.fullPatioReplacement && order.subcontractorJobNumber && (
+            <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>#{order.subcontractorJobNumber}</span>
+          )}
         </div>
-        <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>{order.frameColor || "White"}</span>
-        {order.fullPatioReplacement && order.subcontractorJobNumber && (
-          <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>#{order.subcontractorJobNumber}</span>
-        )}
-        <select
-          value={order.status}
-          onChange={(e) => onStatusChange(order.id, e.target.value)}
-          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
-          style={{ background: s.soft, color: s.color }}
-        >
-          {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
-        </select>
-        <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
-          <Eye size={14} color={COLORS.inkSoft} />
-        </button>
+        <div className="flex items-center justify-between gap-2">
+          <select
+            value={order.status}
+            onChange={(e) => onStatusChange(order.id, e.target.value)}
+            className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+            style={{ background: s.soft, color: s.color }}
+          >
+            {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
+          </select>
+          <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
+            <Eye size={14} color={COLORS.inkSoft} />
+          </button>
+        </div>
       </div>
     );
   };
@@ -2505,26 +2516,32 @@ function CompletePanel({ orders, onEdit, onDelete, onStatusChange, rates, onLook
                   const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
                   const repeatCount = countForCustomer(order);
                   return (
-                    <div key={order.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line }}>
-                      <div className="flex-1 min-w-[140px]">
-                        <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                        <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+                    <div key={order.id} className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+                          <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+                        </div>
+                        {repeatCount > 1 && (
+                          <button
+                            onClick={() => onLookupCustomer(order.customerName || order.phone)}
+                            className="font-display text-xs rounded-full px-2 py-0.5 shrink-0"
+                            style={{ background: "#EAF3F9", color: COLORS.slate }}
+                            title="See this customer's full order history"
+                          >
+                            Repeat ×{repeatCount}
+                          </button>
+                        )}
                       </div>
-                      {repeatCount > 1 && (
-                        <button
-                          onClick={() => onLookupCustomer(order.customerName || order.phone)}
-                          className="font-display text-xs rounded-full px-2 py-0.5"
-                          style={{ background: "#EAF3F9", color: COLORS.slate }}
-                          title="See this customer's full order history"
-                        >
-                          Repeat ×{repeatCount}
-                        </button>
-                      )}
-                      <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Dropped off {formatDate(order.dropOffDate)}</span>
-                      <span className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
-                      <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
-                        <Eye size={14} color={COLORS.inkSoft} />
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Dropped off {formatDate(order.dropOffDate)}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
+                          <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
+                            <Eye size={14} color={COLORS.inkSoft} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -2549,37 +2566,41 @@ function PickupPanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookup
   const Row = ({ order }) => {
     const s = statusById[order.status] || STATUSES[0];
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 border-b" style={{ borderColor: COLORS.line }}>
-        <div className="flex-1 min-w-[140px]">
+      <div className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line }}>
+        <div>
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
-        <div className="text-xs font-body text-right" style={{ color: order.pickupDate ? COLORS.ink : COLORS.inkSoft }}>
+        <div className="text-xs font-body" style={{ color: order.pickupDate ? COLORS.ink : COLORS.inkSoft }}>
           {order.pickupDate ? `Picking up ${formatDate(order.pickupDate)}` : "No pickup date set"}
-          {order.pickupTimeNote && <div style={{ color: COLORS.stamp }}>{order.pickupTimeNote}</div>}
-          {order.completionDate && <div style={{ color: COLORS.inkSoft }}>Ready since {formatDate(order.completionDate)}</div>}
+          {order.pickupTimeNote && <span className="ml-2" style={{ color: COLORS.stamp }}>{order.pickupTimeNote}</span>}
+          {order.completionDate && <span className="ml-2" style={{ color: COLORS.inkSoft }}>Ready since {formatDate(order.completionDate)}</span>}
         </div>
-        <select
-          value={order.status}
-          onChange={(e) => onStatusChange(order.id, e.target.value)}
-          className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
-          style={{ background: s.soft, color: s.color }}
-        >
-          {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
-        </select>
-        {order.pickupDate && (
-          <a
-            href={`data:text/calendar;charset=utf-8,${encodeURIComponent(buildPickupICS(order))}`}
-            className="p-1 rounded hover:bg-black/5"
-            aria-label="Add pickup to calendar"
-            title="Add to Calendar"
+        <div className="flex items-center justify-between gap-2">
+          <select
+            value={order.status}
+            onChange={(e) => onStatusChange(order.id, e.target.value)}
+            className="text-xs font-body font-semibold rounded-full px-2 py-1 border-0 max-w-[9rem] truncate"
+            style={{ background: s.soft, color: s.color }}
           >
-            <CalendarPlus size={14} color={COLORS.inkSoft} />
-          </a>
-        )}
-        <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
-          <Eye size={14} color={COLORS.inkSoft} />
-        </button>
+            {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
+          </select>
+          <div className="flex items-center gap-1 shrink-0">
+            {order.pickupDate && (
+              <a
+                href={`data:text/calendar;charset=utf-8,${encodeURIComponent(buildPickupICS(order))}`}
+                className="p-1 rounded hover:bg-black/5"
+                aria-label="Add pickup to calendar"
+                title="Add to Calendar"
+              >
+                <CalendarPlus size={14} color={COLORS.inkSoft} />
+              </a>
+            )}
+            <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
+              <Eye size={14} color={COLORS.inkSoft} />
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -2622,50 +2643,46 @@ function StatCard({ label, value, accent }) {
 /* ---------------------------------- REPORTS ---------------------------------- */
 function computeTrend(type, orders, ctx) {
   const rev = (o) => (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
-  orders = orders.filter((o) => reportAnchorDate(o) >= REPORTS_START_DATE);
 
+  let buckets, getBucketIndex;
   if (type === "monthly") {
     const { year, month } = ctx;
     const daysInMonth = new Date(year, month, 0).getDate();
     const weeks = Math.ceil(daysInMonth / 7);
-    const buckets = Array.from({ length: weeks }, (_, i) => ({ label: `Week ${i + 1}`, revenue: 0, orders: 0 }));
-    orders.forEach((o) => {
-      const d = new Date(reportAnchorDate(o) + "T00:00:00");
-      if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-        const wk = Math.min(Math.floor((d.getDate() - 1) / 7), weeks - 1);
-        buckets[wk].orders += 1;
-        buckets[wk].revenue += rev(o);
-      }
-    });
-    return buckets;
-  }
-
-  if (type === "quarterly") {
+    buckets = Array.from({ length: weeks }, (_, i) => ({ label: `Week ${i + 1}`, revenue: 0, orders: 0 }));
+    getBucketIndex = (d) => {
+      if (d.getFullYear() !== year || d.getMonth() + 1 !== month) return -1;
+      return Math.min(Math.floor((d.getDate() - 1) / 7), weeks - 1);
+    };
+  } else if (type === "quarterly") {
     const { year, quarter } = ctx;
     const startMonth = (quarter - 1) * 3;
-    const buckets = Array.from({ length: 3 }, (_, i) => ({ label: MONTH_NAMES[startMonth + i], revenue: 0, orders: 0 }));
-    orders.forEach((o) => {
-      const d = new Date(reportAnchorDate(o) + "T00:00:00");
-      if (d.getFullYear() === year) {
-        const m = d.getMonth();
-        if (m >= startMonth && m < startMonth + 3) {
-          buckets[m - startMonth].orders += 1;
-          buckets[m - startMonth].revenue += rev(o);
-        }
-      }
-    });
-    return buckets;
+    buckets = Array.from({ length: 3 }, (_, i) => ({ label: MONTH_NAMES[startMonth + i], revenue: 0, orders: 0 }));
+    getBucketIndex = (d) => {
+      if (d.getFullYear() !== year) return -1;
+      const m = d.getMonth();
+      if (m < startMonth || m >= startMonth + 3) return -1;
+      return m - startMonth;
+    };
+  } else {
+    const { year } = ctx;
+    buckets = MONTH_NAMES.map((label) => ({ label, revenue: 0, orders: 0 }));
+    getBucketIndex = (d) => (d.getFullYear() === year ? d.getMonth() : -1);
   }
 
-  const { year } = ctx;
-  const buckets = MONTH_NAMES.map((label) => ({ label, revenue: 0, orders: 0 }));
   orders.forEach((o) => {
-    const d = new Date(reportAnchorDate(o) + "T00:00:00");
-    if (d.getFullYear() === year) {
-      buckets[d.getMonth()].orders += 1;
-      buckets[d.getMonth()].revenue += rev(o);
+    const jobDate = jobAnchorDate(o);
+    if (jobDate && jobDate >= REPORTS_START_DATE) {
+      const idx = getBucketIndex(new Date(jobDate + "T00:00:00"));
+      if (idx >= 0) buckets[idx].orders += 1;
+    }
+    const revDate = revenueAnchorDate(o);
+    if (revDate && revDate >= REPORTS_START_DATE) {
+      const idx = getBucketIndex(new Date(revDate + "T00:00:00"));
+      if (idx >= 0) buckets[idx].revenue += rev(o);
     }
   });
+
   return buckets;
 }
 
@@ -2723,8 +2740,9 @@ function buildMonthlyFinancials(orders, monthlyExpenses) {
   });
 
   orders.forEach((o) => {
-    if (reportAnchorDate(o) < REPORTS_START_DATE) return;
-    const d = new Date(reportAnchorDate(o) + "T00:00:00");
+    const anchor = revenueAnchorDate(o);
+    if (!anchor || anchor < REPORTS_START_DATE) return;
+    const d = new Date(anchor + "T00:00:00");
     const k = key(d.getFullYear(), d.getMonth() + 1);
     const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
     const existing = map.get(k) || { year: d.getFullYear(), month: d.getMonth() + 1, income: 0, expenses: null };
@@ -2769,34 +2787,50 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
     return { start: new Date(year, 0, 1), end: new Date(year, 11, 31, 23, 59, 59) };
   }, [type, year, month, quarter]);
 
-  const filtered = useMemo(
+  const filteredByCompletion = useMemo(
     () =>
       orders.filter((o) => {
-        if (reportAnchorDate(o) < REPORTS_START_DATE) return false;
-        const d = new Date(reportAnchorDate(o) + "T00:00:00");
+        const anchor = jobAnchorDate(o);
+        if (!anchor || anchor < REPORTS_START_DATE) return false;
+        const d = new Date(anchor + "T00:00:00");
         return d >= range.start && d <= range.end;
       }),
     [orders, range]
   );
 
+  const filteredByPickup = useMemo(
+    () =>
+      orders.filter((o) => {
+        const anchor = revenueAnchorDate(o);
+        if (!anchor || anchor < REPORTS_START_DATE) return false;
+        const d = new Date(anchor + "T00:00:00");
+        return d >= range.start && d <= range.end;
+      }),
+    [orders, range]
+  );
+
+  // Kept as an alias so anything below not yet updated still has a reasonable default to work
+  // from — jobs-oriented views should use filteredByCompletion, revenue views filteredByPickup.
+  const filtered = filteredByCompletion;
+
   const stats = useMemo(() => {
-    const totalOrders = filtered.length;
-    const totalScreens = filtered.reduce((a, o) => a + (Number(o.numScreens) || 0) + (Number(o.numScreensPremium) || 0) + (Number(o.numScreensCustom) || 0), 0);
-    const totalFeet = filtered.reduce((a, o) => a + (Number(o.frameFeet) || 0), 0);
-    const totalPatio = filtered.reduce((a, o) => a + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0), 0);
-    const revenue = filtered.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0);
+    const totalOrders = filteredByCompletion.length;
+    const totalScreens = filteredByCompletion.reduce((a, o) => a + (Number(o.numScreens) || 0) + (Number(o.numScreensPremium) || 0) + (Number(o.numScreensCustom) || 0), 0);
+    const totalFeet = filteredByCompletion.reduce((a, o) => a + (Number(o.frameFeet) || 0), 0);
+    const totalPatio = filteredByCompletion.reduce((a, o) => a + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0), 0);
+    const revenue = filteredByPickup.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0);
     const statusCounts = Object.fromEntries(STATUSES.map((s) => [s.id, 0]));
-    filtered.forEach((o) => { if (statusCounts[o.status] !== undefined) statusCounts[o.status] += 1; });
-    const turnarounds = filtered.filter((o) => o.completionDate).map((o) => daysBetween(o.dropOffDate, o.completionDate));
+    filteredByCompletion.forEach((o) => { if (statusCounts[o.status] !== undefined) statusCounts[o.status] += 1; });
+    const turnarounds = filteredByCompletion.filter((o) => o.completionDate).map((o) => daysBetween(o.dropOffDate, o.completionDate));
     const avgTurnaround = turnarounds.length ? Math.round((turnarounds.reduce((a, b) => a + b, 0) / turnarounds.length) * 10) / 10 : null;
     const paymentCounts = Object.fromEntries(PAYMENT_METHODS.filter((p) => p.id).map((p) => [p.id, 0]));
     let unpaidCount = 0;
-    filtered.forEach((o) => {
+    filteredByPickup.forEach((o) => {
       if (o.paymentMethod && paymentCounts[o.paymentMethod] !== undefined) paymentCounts[o.paymentMethod] += 1;
       else unpaidCount += 1;
     });
     return { totalOrders, totalScreens, totalFeet, totalPatio, revenue, statusCounts, avgTurnaround, paymentCounts, unpaidCount };
-  }, [filtered]);
+  }, [filteredByCompletion, filteredByPickup]);
 
   const trend = useMemo(() => computeTrend(type, orders, { year, month, quarter }), [type, orders, year, month, quarter]);
 
@@ -2811,8 +2845,8 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
     // Revenue restricted to this same window (not the broader period's stats.revenue), so
     // $/hour and $/day figures always compare against the same span of time they're divided by.
     const restrictedRevenue = orders.reduce((sum, o) => {
-      const anchor = reportAnchorDate(o);
-      if (anchor < HOURLY_STATS_START_DATE) return sum;
+      const anchor = revenueAnchorDate(o);
+      if (!anchor || anchor < HOURLY_STATS_START_DATE) return sum;
       const d = new Date(anchor + "T00:00:00");
       if (d < range.start || d > range.end) return sum;
       return sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
@@ -2886,8 +2920,8 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
   const jobStats = useMemo(() => {
     const effectiveStart = range.start < new Date(HOURLY_STATS_START_DATE + "T00:00:00") ? new Date(HOURLY_STATS_START_DATE + "T00:00:00") : range.start;
     const restrictedOrders = orders.filter((o) => {
-      const anchor = reportAnchorDate(o);
-      if (anchor < HOURLY_STATS_START_DATE) return false;
+      const anchor = jobAnchorDate(o);
+      if (!anchor || anchor < HOURLY_STATS_START_DATE) return false;
       const d = new Date(anchor + "T00:00:00");
       return d >= range.start && d <= range.end;
     });
@@ -3148,29 +3182,32 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
           </div>
 
           <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Jobs this period</p>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Jobs this period (by completion date)</p>
             {filtered.length === 0 ? (
-              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No jobs in this period.</p>
+              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No jobs completed in this period.</p>
             ) : (
               <div className="space-y-1">
                 {[...filtered]
-                  .sort((a, b) => (reportAnchorDate(a) < reportAnchorDate(b) ? -1 : reportAnchorDate(a) > reportAnchorDate(b) ? 1 : 0))
+                  .sort((a, b) => (jobAnchorDate(a) < jobAnchorDate(b) ? -1 : jobAnchorDate(a) > jobAnchorDate(b) ? 1 : 0))
                   .map((o) => {
                     const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
                     return (
                       <div key={o.id} className="flex items-center justify-between text-sm font-body py-1.5 border-b" style={{ borderColor: COLORS.line }}>
                         <div>
                           <span style={{ color: COLORS.ink }}>{o.customerName}</span>
-                          <span className="ml-2 text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(reportAnchorDate(o))}</span>
+                          <span className="ml-2 text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(jobAnchorDate(o))}</span>
                         </div>
                         <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(revenue)}</span>
                       </div>
                     );
                   })}
                 <div className="flex items-center justify-between text-sm font-body pt-2">
-                  <span className="font-display uppercase tracking-wide text-xs" style={{ color: COLORS.inkSoft }}>Total</span>
-                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(stats.revenue)}</span>
+                  <span className="font-display uppercase tracking-wide text-xs" style={{ color: COLORS.inkSoft }}>Total for these jobs</span>
+                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(filtered.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0))}</span>
                 </div>
+                <p className="text-xs font-body italic pt-1" style={{ color: COLORS.inkSoft }}>
+                  This total may not match "Revenue" above — that figure counts by pickup date, not completion date, so a job finished this period but picked up in a different one will show here but count toward revenue elsewhere.
+                </p>
               </div>
             )}
           </div>
@@ -5041,7 +5078,7 @@ function InternalTracker() {
       {/* Header */}
       <div className="sticky top-0 z-30 shadow-sm bg-white" style={{ borderBottom: `1px solid ${COLORS.line}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-10 sm:h-11 w-auto" />
+          <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-8 sm:h-10 md:h-11 w-auto shrink-0" />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMoreMenuOpen(true)}
@@ -5053,14 +5090,14 @@ function InternalTracker() {
             </button>
             <button
               onClick={openNew}
-              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-display uppercase tracking-wide text-white"
+              className="flex items-center gap-1.5 rounded-full px-3 sm:px-4 py-2 text-sm font-display uppercase tracking-wide text-white shrink-0"
               style={{ background: COLORS.slate }}
             >
-              <Plus size={16} /> New order
+              <Plus size={16} /> <span className="hidden sm:inline">New order</span>
             </button>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 flex gap-2 pb-2 overflow-x-auto no-scrollbar">
+        <div className="max-w-6xl mx-auto px-4 flex gap-1.5 pb-2 overflow-x-auto no-scrollbar">
           {[
             { id: "requests", label: "Inbox", icon: Inbox, badge: loading ? 0 : (getMissingTimeLogDays(timeLogs).length > 0 ? 1 : 0) + getMissingExpenseMonths(monthlyExpenses).length + submissions.length + orders.filter((o) => o.status === "picked_up").length + orders.filter((o) => o.status !== "closed" && o.status !== "new_order" && o.status !== "picked_up" && getMissingDetails(o).length > 0).length + orders.filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0).length + manualTasks.length },
             { id: "dashboard", label: "Jobs", icon: ListChecks },
@@ -5070,7 +5107,7 @@ function InternalTracker() {
             <button
               key={t.id}
               onClick={() => setView(t.id)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-display uppercase tracking-wide shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-display uppercase tracking-wide shrink-0"
               style={{
                 background: view === t.id ? COLORS.slate : "transparent",
                 color: view === t.id ? "white" : COLORS.inkSoft,
@@ -5269,22 +5306,26 @@ function InternalTracker() {
                     const s = statusById[order.status] || STATUSES[0];
                     const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
                     return (
-                      <div key={order.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 border-b" style={{ borderColor: COLORS.line }}>
-                        <div className="flex-1 min-w-[140px]">
+                      <div key={order.id} className="p-3 border-b space-y-1.5" style={{ borderColor: COLORS.line }}>
+                        <div>
                           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
                           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                         </div>
-                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(order.dropOffDate)}</span>
-                        <span className="font-display text-xs uppercase rounded-full px-2 py-0.5" style={{ background: s.soft, color: s.color }}>{s.label}</span>
-                        <span className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
-                        <button
-                          onClick={() => { setViewingOrder(order); setCustomerSearchOpen(false); setCustomerSearchQuery(""); }}
-                          className="p-1 rounded hover:bg-black/5"
-                          aria-label="View order details"
-                          title="View order"
-                        >
-                          <Eye size={14} color={COLORS.inkSoft} />
-                        </button>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(order.dropOffDate)}</span>
+                          <span className="font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: s.soft, color: s.color }}>{s.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
+                          <button
+                            onClick={() => { setViewingOrder(order); setCustomerSearchOpen(false); setCustomerSearchQuery(""); }}
+                            className="p-1 rounded hover:bg-black/5"
+                            aria-label="View order details"
+                            title="View order"
+                          >
+                            <Eye size={14} color={COLORS.inkSoft} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
