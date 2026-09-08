@@ -448,6 +448,7 @@ const emptyForm = {
   pickupDate: "",
   pickupTimeNote: "",
   status: "in_progress",
+  isRush: false,
   customerName: "",
   phone: "",
   email: "",
@@ -805,6 +806,15 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             {STATUSES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!form.isRush}
+            onChange={(e) => setForm((f) => ({ ...f, isRush: e.target.checked }))}
+            className="w-4 h-4"
+          />
+          <span className="font-body text-sm font-semibold" style={{ color: COLORS.stamp }}>Rush Order — move to top of queue</span>
+        </label>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Drop-off date</label>
           <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
@@ -1345,6 +1355,11 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
+          {order.isRush && (
+            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.stamp, color: "white" }}>
+              ⚡ Rush Order
+            </span>
+          )}
           <p className="font-display text-base truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
           <div className="flex items-center gap-1.5">
             <Phone size={12} color={COLORS.slate} />
@@ -1501,7 +1516,10 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   const withDays = (list) => list.map((o) => ({ ...o, daysOpen: daysBetween(o.dropOffDate, todayISO()) }));
   // "ready" orders have no assembly work left, so they're excluded from both the nightly
   // queue and the priority list — you can already see them on the Board or Pick Up tab.
-  const active = withDays(orders.filter((o) => o.status !== "waiting_parts" && o.status !== "picked_up" && o.status !== "ready" && o.status !== "closed" && o.status !== "new_order")).sort((a, b) => b.daysOpen - a.daysOpen);
+  const active = withDays(orders.filter((o) => o.status !== "waiting_parts" && o.status !== "picked_up" && o.status !== "ready" && o.status !== "closed" && o.status !== "new_order")).sort((a, b) => {
+    if (!!a.isRush !== !!b.isRush) return a.isRush ? -1 : 1;
+    return b.daysOpen - a.daysOpen;
+  });
   const inProgress = active.filter((o) => o.status === "in_progress" && !(o.fullPatioReplacement && (Number(o.numScreens) || 0) + (Number(o.numScreensCustom) || 0) === 0 && (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0) === 0));
   // Deliberately independent of the general order status: a mixed order's screens can be
   // marked done/picked up while the door is still sitting at Metro Screenworks. This only
@@ -1523,6 +1541,11 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     return (
       <div className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
         <div>
+          {order.isRush && (
+            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.stamp, color: "white" }}>
+              ⚡ Rush Order
+            </span>
+          )}
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
