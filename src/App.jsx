@@ -813,7 +813,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             onChange={(e) => setForm((f) => ({ ...f, isRush: e.target.checked }))}
             className="w-4 h-4"
           />
-          <span className="font-body text-sm font-semibold" style={{ color: COLORS.stamp }}>Rush Order — move to top of queue</span>
+          <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Rush Order — move to top of queue</span>
         </label>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Drop-off date</label>
