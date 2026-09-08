@@ -5091,7 +5091,10 @@ function InternalTracker() {
   const grouped = useMemo(() => {
     const g = Object.fromEntries(STATUSES.map((s) => [s.id, []]));
     orders.forEach((o) => { if (g[o.status]) g[o.status].push(o); });
-    Object.values(g).forEach((list) => list.sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0)));
+    Object.values(g).forEach((list) => list.sort((a, b) => {
+      if (!!a.isRush !== !!b.isRush) return a.isRush ? -1 : 1;
+      return a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0;
+    }));
     return g;
   }, [orders]);
 
