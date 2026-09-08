@@ -2884,12 +2884,24 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
 
   // Jobs tab: work-volume averages for the period.
   const jobStats = useMemo(() => {
-    const totalDaysInPeriod = calendarDaysInRange(range.start, range.end);
+    const effectiveStart = range.start < new Date(HOURLY_STATS_START_DATE + "T00:00:00") ? new Date(HOURLY_STATS_START_DATE + "T00:00:00") : range.start;
+    const restrictedOrders = orders.filter((o) => {
+      const anchor = reportAnchorDate(o);
+      if (anchor < HOURLY_STATS_START_DATE) return false;
+      const d = new Date(anchor + "T00:00:00");
+      return d >= range.start && d <= range.end;
+    });
+    const restrictedJobCount = restrictedOrders.length;
+    const restrictedScreenCount = restrictedOrders.reduce((sum, o) => sum + (Number(o.numScreens) || 0) + (Number(o.numScreensCustom) || 0), 0);
+    const totalDaysInPeriod = effectiveStart > range.end ? 0 : calendarDaysInRange(effectiveStart, range.end);
     const avgScreensPerJob = stats.totalOrders > 0 ? stats.totalScreens / stats.totalOrders : null;
-    const jobsPerDay = totalDaysInPeriod > 0 ? stats.totalOrders / totalDaysInPeriod : null;
-    const screensPerDay = totalDaysInPeriod > 0 ? stats.totalScreens / totalDaysInPeriod : null;
+    // Per-day figures use actual days worked (from Save My Work), not every calendar day in the
+    // period — a slow month with few days worked shouldn't look artificially low just because
+    // most days had no work logged at all.
+    const jobsPerDay = timeStats.daysWorked > 0 ? restrictedJobCount / timeStats.daysWorked : null;
+    const screensPerDay = timeStats.daysWorked > 0 ? restrictedScreenCount / timeStats.daysWorked : null;
     return { totalDaysInPeriod, avgScreensPerJob, jobsPerDay, screensPerDay };
-  }, [stats, range]);
+  }, [stats, range, orders, timeStats.daysWorked]);
 
   // Expenses tab: every logged month, most recent first, with revenue/profit computed from orders.
   const monthlyFinancials = useMemo(() => buildMonthlyFinancials(orders, monthlyExpenses), [orders, monthlyExpenses]);
@@ -3118,7 +3130,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
           </div>
           <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
             <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>
-              Averages across this period ({jobStats.totalDaysInPeriod} calendar days)
+              Averages across days actually worked ({timeStats.daysWorked} days, since Sept 1 2026)
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center justify-between text-sm font-body rounded-md px-3 py-2" style={{ background: COLORS.canvasDark }}>
@@ -3131,7 +3143,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
               </div>
             </div>
             <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
-              These are averaged across every calendar day in the period, including days you didn't work — check the Time tab for per-day-worked figures instead.
+              Based on days you actually logged hours for via Save My Work, not every calendar day in the period — and only counting work from September 1, 2026 onward, even when viewing a broader period like quarterly or annual.
             </p>
           </div>
         </div>
