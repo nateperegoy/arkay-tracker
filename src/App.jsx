@@ -2684,6 +2684,11 @@ function isSampleEntry(entry) {
 }
 
 const REPORTS_START_DATE = "2026-08-01";
+// Hours-based stats ($/hour, days worked, etc.) use a separate, later start date than the rest
+// of Reports — hours logging wasn't consistent before this, so anything earlier gets excluded
+// from these specific figures even when viewing a broader period like "yearly" that would
+// otherwise include it.
+const HOURLY_STATS_START_DATE = "2026-09-01";
 
 // Imported directly from the user's own income/expense tracking (Wave → Google Sheet close-out),
 // covering everything before this tracker started recording real data on Aug 1, 2026. Verified
@@ -2797,17 +2802,27 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
 
   // Time tab: hours logged within the same period, linked to the same period's revenue.
   const timeStats = useMemo(() => {
+    const effectiveStart = range.start < new Date(HOURLY_STATS_START_DATE + "T00:00:00") ? new Date(HOURLY_STATS_START_DATE + "T00:00:00") : range.start;
     const inRange = (timeLogs || []).filter((l) => {
-      if (l.date < REPORTS_START_DATE) return false;
+      if (l.date < HOURLY_STATS_START_DATE) return false;
       const d = new Date(l.date + "T00:00:00");
       return d >= range.start && d <= range.end;
     });
+    // Revenue restricted to this same window (not the broader period's stats.revenue), so
+    // $/hour and $/day figures always compare against the same span of time they're divided by.
+    const restrictedRevenue = orders.reduce((sum, o) => {
+      const anchor = reportAnchorDate(o);
+      if (anchor < HOURLY_STATS_START_DATE) return sum;
+      const d = new Date(anchor + "T00:00:00");
+      if (d < range.start || d > range.end) return sum;
+      return sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+    }, 0);
     const totalHours = inRange.reduce((a, l) => a + (Number(l.hours) || 0), 0);
     const daysWorked = inRange.filter((l) => Number(l.hours) > 0).length;
-    const totalDaysInPeriod = calendarDaysInRange(range.start, range.end);
-    const perHour = totalHours > 0 ? stats.revenue / totalHours : null;
-    const perDayWorked = daysWorked > 0 ? stats.revenue / daysWorked : null;
-    const perDayOverall = totalDaysInPeriod > 0 ? stats.revenue / totalDaysInPeriod : null;
+    const totalDaysInPeriod = effectiveStart > range.end ? 0 : calendarDaysInRange(effectiveStart, range.end);
+    const perHour = totalHours > 0 ? restrictedRevenue / totalHours : null;
+    const perDayWorked = daysWorked > 0 ? restrictedRevenue / daysWorked : null;
+    const perDayOverall = totalDaysInPeriod > 0 ? restrictedRevenue / totalDaysInPeriod : null;
     const avgHoursPerDayWorked = daysWorked > 0 ? totalHours / daysWorked : null;
 
     // Which days of the week you actually work — useful for seeing whether this is eating
@@ -2844,20 +2859,21 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
     }
 
     return { totalHours, daysWorked, totalDaysInPeriod, perHour, perDayWorked, perDayOverall, avgHoursPerDayWorked, byDayOfWeek, weekdayWeekendPct, weeklyTrend };
-  }, [timeLogs, range, stats.revenue]);
+  }, [timeLogs, range, orders]);
 
   // Cross-references actual logged progress (from "What I Got Done") against hours logged for
   // the same period, to get real efficiency figures — distinct from jobStats below, which only
   // reflects order volume, not actual completion tracking.
   const productivityStats = useMemo(() => {
+    const effectiveStart = range.start < new Date(HOURLY_STATS_START_DATE + "T00:00:00") ? new Date(HOURLY_STATS_START_DATE + "T00:00:00") : range.start;
     const inRange = (workProgress || []).filter((p) => {
-      if (p.date < REPORTS_START_DATE) return false;
+      if (p.date < HOURLY_STATS_START_DATE) return false;
       const d = new Date(p.date + "T00:00:00");
       return d >= range.start && d <= range.end;
     });
     const screensCompleted = inRange.reduce((a, p) => a + (Number(p.screensCompleted) || 0), 0);
     const patioCompleted = inRange.reduce((a, p) => a + (Number(p.patioCompleted) || 0), 0);
-    const totalDaysInPeriod = calendarDaysInRange(range.start, range.end);
+    const totalDaysInPeriod = effectiveStart > range.end ? 0 : calendarDaysInRange(effectiveStart, range.end);
     const weeksInPeriod = totalDaysInPeriod / 7;
     const minutesPerScreen = screensCompleted > 0 ? (timeStats.totalHours * 60) / screensCompleted : null;
     const screensPerWeek = weeksInPeriod > 0 ? screensCompleted / weeksInPeriod : null;
