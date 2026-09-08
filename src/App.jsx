@@ -3146,6 +3146,34 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
               Based on days you actually logged hours for via Save My Work, not every calendar day in the period — and only counting work from September 1, 2026 onward, even when viewing a broader period like quarterly or annual.
             </p>
           </div>
+
+          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Jobs this period</p>
+            {filtered.length === 0 ? (
+              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No jobs in this period.</p>
+            ) : (
+              <div className="space-y-1">
+                {[...filtered]
+                  .sort((a, b) => (reportAnchorDate(a) < reportAnchorDate(b) ? -1 : reportAnchorDate(a) > reportAnchorDate(b) ? 1 : 0))
+                  .map((o) => {
+                    const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+                    return (
+                      <div key={o.id} className="flex items-center justify-between text-sm font-body py-1.5 border-b" style={{ borderColor: COLORS.line }}>
+                        <div>
+                          <span style={{ color: COLORS.ink }}>{o.customerName}</span>
+                          <span className="ml-2 text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(reportAnchorDate(o))}</span>
+                        </div>
+                        <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(revenue)}</span>
+                      </div>
+                    );
+                  })}
+                <div className="flex items-center justify-between text-sm font-body pt-2">
+                  <span className="font-display uppercase tracking-wide text-xs" style={{ color: COLORS.inkSoft }}>Total</span>
+                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(stats.revenue)}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
