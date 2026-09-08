@@ -1465,26 +1465,30 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
 }
 
 /* ---------------------------------- PRIORITY DASHBOARD ---------------------------------- */
-function computeNightlyQueue(active, max) {
+function computeNightlyQueue(active, max, workProgress) {
   let total = 0;
   const queue = [];
   for (const o of active) {
     if (total >= max) break;
-    const units = (Number(o.numScreens) || 0) + (Number(o.numScreensCustom) || 0) + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0);
-    if (units <= 0) continue;
-    const remaining = max - total;
-    if (units <= remaining) {
-      queue.push({ order: o, count: units, partial: false });
-      total += units;
+    const fullUnits = (Number(o.numScreens) || 0) + (Number(o.numScreensCustom) || 0) + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0);
+    const loggedUnits = (workProgress || [])
+      .filter((p) => p.orderId === o.id)
+      .reduce((sum, p) => sum + (Number(p.screensCompleted) || 0) + (Number(p.patioCompleted) || 0), 0);
+    const remainingTotal = Math.max(0, fullUnits - loggedUnits);
+    if (remainingTotal <= 0) continue;
+    const remainingCapacity = max - total;
+    if (remainingTotal <= remainingCapacity) {
+      queue.push({ order: o, count: remainingTotal, partial: false, remainingTotal });
+      total += remainingTotal;
     } else {
-      queue.push({ order: o, count: remaining, partial: true });
-      total += remaining;
+      queue.push({ order: o, count: remainingCapacity, partial: true, remainingTotal });
+      total += remainingCapacity;
     }
   }
   return { queue, total };
 }
 
-function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, onLookupCustomer }) {
+function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, onLookupCustomer, workProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const withDays = (list) => list.map((o) => ({ ...o, daysOpen: daysBetween(o.dropOffDate, todayISO()) }));
   // "ready" orders have no assembly work left, so they're excluded from both the nightly
@@ -1496,7 +1500,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   // cares whether the door itself has come back yet, and stops showing once it's Closed.
   const waitingOnMetro = withDays(orders.filter((o) => o.fullPatioReplacement && o.metroStatus === "ordered" && o.status !== "closed" && o.status !== "new_order")).sort((a, b) => b.daysOpen - a.daysOpen);
   const waiting = withDays(orders.filter((o) => o.status === "waiting_parts" && !(o.fullPatioReplacement && o.metroStatus === "ordered"))).sort((a, b) => b.daysOpen - a.daysOpen);
-  const { queue, total } = computeNightlyQueue(active, 8);
+  const { queue, total } = computeNightlyQueue(active, 8, workProgress);
 
   const CategoryIcons = ({ order }) => (
     <span className="flex items-center gap-1">
@@ -1548,12 +1552,12 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             <span className="text-xs font-body rounded-full px-2 py-0.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>{total} of 6–8 screens</span>
           </div>
           <div>
-            {queue.map(({ order, count, partial }) => (
+            {queue.map(({ order, count, partial, remainingTotal }) => (
               <div key={order.id} className="flex items-center justify-between py-2 border-b text-sm font-body" style={{ borderColor: COLORS.line }}>
                 <span style={{ color: COLORS.ink }}>{order.customerName}</span>
                 <div className="flex items-center gap-2">
                   <span className="font-body text-xs" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
-                    {partial ? `${count} of ${(Number(order.numScreens) || 0) + (Number(order.numScreensCustom) || 0) + (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0)} screens` : `${count} screen${count === 1 ? "" : "s"} (all)`}
+                    {partial ? `${count} of ${remainingTotal} screens` : `${count} screen${count === 1 ? "" : "s"} (all)`}
                   </span>
                   <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
                     <Eye size={13} color={COLORS.inkSoft} />
@@ -5070,7 +5074,7 @@ function InternalTracker() {
               </button>
             </div>
           ) : (
-            <PriorityDashboard orders={orders} rates={rates} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} onLookupCustomer={lookupCustomer} />
+            <PriorityDashboard orders={orders} rates={rates} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} onLookupCustomer={lookupCustomer} workProgress={workProgress} />
           )
         ) : view === "board" ? (
           orders.length === 0 ? (
