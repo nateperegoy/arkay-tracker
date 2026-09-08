@@ -5078,7 +5078,8 @@ function InternalTracker() {
       {/* Header */}
       <div className="sticky top-0 z-30 shadow-sm bg-white" style={{ borderBottom: `1px solid ${COLORS.line}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-8 sm:h-10 md:h-11 w-auto shrink-0" />
+          <img src={LOGO_ICON} alt="Arkay Window Screens" className="h-9 w-auto shrink-0 sm:hidden" />
+          <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="hidden sm:block h-10 md:h-11 w-auto shrink-0" />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMoreMenuOpen(true)}
@@ -5090,7 +5091,7 @@ function InternalTracker() {
             </button>
             <button
               onClick={openNew}
-              className="flex items-center gap-1.5 rounded-full px-3 sm:px-4 py-2 text-sm font-display uppercase tracking-wide text-white shrink-0"
+              className="flex items-center gap-1.5 rounded-full p-2 sm:px-4 sm:py-2 text-sm font-display uppercase tracking-wide text-white shrink-0"
               style={{ background: COLORS.slate }}
             >
               <Plus size={16} /> <span className="hidden sm:inline">New order</span>
