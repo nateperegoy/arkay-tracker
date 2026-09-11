@@ -270,12 +270,12 @@ function formatPhoneInput(value) {
 function voiceLink(raw) {
   const digits = (raw || "").replace(/\D/g, "");
   if (digits.length === 10) {
-    return `https://voice.google.com/u/0/messages?itemId=t.%2B1${digits}`;
+    return `sms:+1${digits}`;
   }
   if (digits.length === 11 && digits.startsWith("1")) {
-    return `https://voice.google.com/u/0/messages?itemId=t.%2B${digits}`;
+    return `sms:+${digits}`;
   }
-  return "https://voice.google.com/u/0/messages";
+  return "sms:";
 }
 
 function voiceCallLink(raw) {
@@ -4802,6 +4802,8 @@ function InternalTracker() {
   const [timeLogs, setTimeLogs] = useState([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState([]);
   const [manualTasks, setManualTasks] = useState([]);
+  const manualTasksRef = useRef(manualTasks);
+  useEffect(() => { manualTasksRef.current = manualTasks; }, [manualTasks]);
   const [workProgress, setWorkProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
@@ -5016,7 +5018,7 @@ function InternalTracker() {
     } catch (e) {
       resolvedStatus = "failed";
     }
-    const next = manualTasks.map((t) => (t.id === taskId ? { ...t, todoistStatus: resolvedStatus } : t));
+    const next = manualTasksRef.current.map((t) => (t.id === taskId ? { ...t, todoistStatus: resolvedStatus } : t));
     await persistManualTasks(next);
   };
   const addManualTask = (orderId, description, dueDate) => {
@@ -5025,7 +5027,7 @@ function InternalTracker() {
     syncTaskToTodoist(newTask.id, description, dueDate);
   };
   const retryTodoistSync = async (taskId, description, dueDate) => {
-    const next = manualTasks.map((t) => (t.id === taskId ? { ...t, todoistStatus: "pending" } : t));
+    const next = manualTasksRef.current.map((t) => (t.id === taskId ? { ...t, todoistStatus: "pending" } : t));
     await persistManualTasks(next);
     syncTaskToTodoist(taskId, description, dueDate);
   };
