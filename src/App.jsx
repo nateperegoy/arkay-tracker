@@ -1185,7 +1185,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
     }).length;
   })();
   const row = (label, value) => (
-    <div className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: COLORS.line }}>
+    <div className="flex flex-wrap items-center justify-between gap-x-2 py-1.5 border-b" style={{ borderColor: COLORS.line }}>
       <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{label}</span>
       <span className="font-body text-sm text-right" style={{ color: COLORS.ink }}>{value}</span>
     </div>
@@ -5144,7 +5144,7 @@ function InternalTracker() {
             </button>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 flex gap-1.5 pb-2 overflow-x-auto no-scrollbar">
+        <div className="max-w-6xl mx-auto px-4 flex flex-wrap gap-1.5 pb-2">
           {[
             { id: "requests", label: "Inbox", icon: Inbox, badge: loading ? 0 : (getMissingTimeLogDays(timeLogs).length > 0 ? 1 : 0) + getMissingExpenseMonths(monthlyExpenses).length + submissions.length + orders.filter((o) => o.status === "picked_up").length + orders.filter((o) => o.status !== "closed" && o.status !== "new_order" && o.status !== "picked_up" && getMissingDetails(o).length > 0).length + orders.filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0).length + manualTasks.length },
             { id: "dashboard", label: "Jobs", icon: ListChecks },
