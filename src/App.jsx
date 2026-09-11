@@ -268,14 +268,11 @@ function formatPhoneInput(value) {
 // commonly used but not officially documented by Google, so it isn't guaranteed to keep
 // working — if it just opens your general Voice inbox instead of the right thread, that's why.
 function voiceLink(raw) {
-  const digits = (raw || "").replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `https://voice.google.com/u/0/messages?itemId=t.%2B1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith("1")) {
-    return `https://voice.google.com/u/0/messages?itemId=t.%2B${digits}`;
-  }
-  return "https://voice.google.com/u/0/messages";
+  // Opens the native Google Voice app directly (confirmed real URL scheme), rather than the
+  // web version. No confirmed parameter exists for pre-filling a recipient within the app
+  // itself, so this just launches the app — the phone number still needs to be selected
+  // manually once inside it.
+  return "googlevoice://";
 }
 
 function voiceCallLink(raw) {
@@ -1459,7 +1456,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
               const itemizedText = buildItemizedLines(order, rates).join("\n");
               const message = `Hi${firstName ? ` ${firstName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${formatMoney(total)}.\n${itemizedText}\n\nThere's a drop box at my front door where you can leave a payment. I take Venmo, Zelle and check but I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`;
               try { await navigator.clipboard.writeText(message); } catch (e) {}
-              window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+              window.location.href = voiceLink(order.phone);
             }}
             className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
@@ -2210,7 +2207,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                   const firstName = (order.customerName || "").split(" ")[0] || "";
                                   const message = `Thanks${firstName ? ` ${firstName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
                                   try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                  window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                  window.location.href = voiceLink(order.phone);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
                                 }}
@@ -2225,7 +2222,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                   const firstName = (order.customerName || "").split(" ")[0] || "there";
                                   const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
                                   try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                  window.open(voiceLink(order.phone), "_blank", "noopener,noreferrer");
+                                  window.location.href = voiceLink(order.phone);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
                                 }}
@@ -2320,7 +2317,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                             onClick={async () => {
                               const message = `Here's a quick guide to help you measure your window screen: ${MEASURING_GUIDE_LINK}`;
                               try { await navigator.clipboard.writeText(message); } catch (e) {}
-                              window.open(voiceLink(task.phone), "_blank", "noopener,noreferrer");
+                              window.location.href = voiceLink(task.phone);
                             }}
                             className="font-display text-xs uppercase tracking-wide underline"
                             style={{ color: COLORS.slate }}
@@ -3570,7 +3567,7 @@ function QuickLinksPanel({ rates, orders }) {
     } catch (e) {}
     const selectedOrder = orders.find((o) => o.id === selectedOrderId);
     if (selectedOrder && selectedOrder.phone) {
-      window.open(voiceLink(selectedOrder.phone), "_blank", "noopener,noreferrer");
+      window.location.href = voiceLink(selectedOrder.phone);
     }
   };
 
