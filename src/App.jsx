@@ -275,6 +275,20 @@ function voiceLink(raw) {
   return "googlevoice://";
 }
 
+// Copies the phone number first (so it's ready to paste into Google Voice's search/recipient
+// field right away, instead of having to go hunt for it) and opens the app, then swaps the
+// clipboard over to the actual message a few seconds later — timed for about when the number
+// would already be pasted in and the user is ready to paste the message text next.
+function copyNumberThenMessage(phone, message) {
+  const digits = (phone || "").replace(/\D/g, "");
+  const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone || "";
+  navigator.clipboard.writeText(formattedNumber).catch(() => {});
+  window.location.href = voiceLink(phone);
+  setTimeout(() => {
+    navigator.clipboard.writeText(message).catch(() => {});
+  }, 3500);
+}
+
 function voiceCallLink(raw) {
   const digits = (raw || "").replace(/\D/g, "");
   if (digits.length === 10) {
@@ -1455,8 +1469,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
               const firstName = (order.customerName || "").split(" ")[0] || "";
               const itemizedText = buildItemizedLines(order, rates).join("\n");
               const message = `Hi${firstName ? ` ${firstName}` : " there"},\n\nI just wrapped your order and it's ready for pick up. No need to arrange a particular time — just let me know what day you'd like to be by and I'll have it out.\n\nYour total is ${formatMoney(total)}.\n${itemizedText}\n\nThere's a drop box at my front door where you can leave a payment. I take Venmo, Zelle and check but I prefer cash if you can do it.\n\nAfter pick up is complete, I'll follow up with a link to leave a review.\n\nThanks!\nNate`;
-              try { await navigator.clipboard.writeText(message); } catch (e) {}
-              window.location.href = voiceLink(order.phone);
+              copyNumberThenMessage(order.phone, message);
             }}
             className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wide underline"
             style={{ color: COLORS.slate }}
@@ -2206,8 +2219,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                 onClick={async () => {
                                   const firstName = (order.customerName || "").split(" ")[0] || "";
                                   const message = `Thanks${firstName ? ` ${firstName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
-                                  try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                  window.location.href = voiceLink(order.phone);
+                                  copyNumberThenMessage(order.phone, message);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
                                 }}
@@ -2221,8 +2233,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                 onClick={async () => {
                                   const firstName = (order.customerName || "").split(" ")[0] || "there";
                                   const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
-                                  try { await navigator.clipboard.writeText(message); } catch (e) {}
-                                  window.location.href = voiceLink(order.phone);
+                                  copyNumberThenMessage(order.phone, message);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
                                 }}
@@ -2316,8 +2327,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                           <button
                             onClick={async () => {
                               const message = `Here's a quick guide to help you measure your window screen: ${MEASURING_GUIDE_LINK}`;
-                              try { await navigator.clipboard.writeText(message); } catch (e) {}
-                              window.location.href = voiceLink(task.phone);
+                              copyNumberThenMessage(task.phone, message);
                             }}
                             className="font-display text-xs uppercase tracking-wide underline"
                             style={{ color: COLORS.slate }}
@@ -3560,14 +3570,13 @@ function QuickLinksPanel({ rates, orders }) {
   ];
 
   const copy = async (key, value) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
-    } catch (e) {}
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
     const selectedOrder = orders.find((o) => o.id === selectedOrderId);
     if (selectedOrder && selectedOrder.phone) {
-      window.location.href = voiceLink(selectedOrder.phone);
+      copyNumberThenMessage(selectedOrder.phone, value);
+    } else {
+      try { await navigator.clipboard.writeText(value); } catch (e) {}
     }
   };
 
