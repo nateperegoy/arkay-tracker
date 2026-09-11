@@ -270,12 +270,12 @@ function formatPhoneInput(value) {
 function voiceLink(raw) {
   const digits = (raw || "").replace(/\D/g, "");
   if (digits.length === 10) {
-    return `sms:+1${digits}`;
+    return `https://voice.google.com/u/0/messages?itemId=t.%2B1${digits}`;
   }
   if (digits.length === 11 && digits.startsWith("1")) {
-    return `sms:+${digits}`;
+    return `https://voice.google.com/u/0/messages?itemId=t.%2B${digits}`;
   }
-  return "sms:";
+  return "https://voice.google.com/u/0/messages";
 }
 
 function voiceCallLink(raw) {
