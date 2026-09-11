@@ -2235,6 +2235,17 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                                 Request Review
                                 <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>They haven't been asked yet</span>
                               </button>
+                              <button
+                                onClick={() => {
+                                  onToggleReview(order.id);
+                                  setReviewMenuOrderId(null);
+                                }}
+                                className="w-full text-left rounded-md py-2.5 px-3 mb-2 text-sm font-body"
+                                style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                              >
+                                Already Sent
+                                <span className="block text-xs mt-0.5" style={{ color: COLORS.inkSoft }}>Just mark it sent — I already asked another way</span>
+                              </button>
                               <button onClick={() => setReviewMenuOrderId(null)} className="w-full text-center font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
                                 Cancel
                               </button>
