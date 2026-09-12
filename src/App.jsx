@@ -3545,7 +3545,7 @@ function QuickLinksPanel({ rates, orders }) {
     {
       key: "pricingFull",
       label: "Full Info (Pricing, Pickup, Payment)",
-      value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, larger screens are $${rates.screenPremium - rates.screen} more and standard patio door screens (if needed) are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to one of your items — it helps me keep everyone's items straight.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
+      value: `Here's how it works:\n\nStandard window screens are $${rates.screen} each, larger screens are $${rates.screenPremium - rates.screen} more and standard patio door screens (if needed) are $${rates.patioDoor} each. Turnaround is usually about ${rates.turnaroundDays} days.\n\nYou can drop off at ${BUSINESS_ADDRESS}. Please tape your name and number to an item.\n\nPayment is due at pickup — cash is preferred. If I'm not home when you come back, there's a secure drop box at the front door where you can leave your payment.`,
     },
     {
       key: "readyForPickup",
@@ -4666,7 +4666,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     <div className="space-y-2.5">
                       <div className="flex items-start gap-2.5">
                         <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
-                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to one of your items — it helps me keep everyone's items straight.</p>
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name and number to an item.</p>
                       </div>
                       <div className="flex items-start gap-2.5">
                         <Clock size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
