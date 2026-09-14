@@ -467,6 +467,7 @@ const emptyForm = {
   numScreensPremium: "",
   numScreensCustom: "",
   customScreenPrice: "",
+  customScreensExtra: [],
   frameFeet: "",
   frameColor: "White",
   frameColorOther: "",
@@ -529,7 +530,8 @@ function autoScreenPrice(form, rates) {
   const standard = (Number(form.numScreens) || 0) * rates.screen;
   const premium = (Number(form.numScreensPremium) || 0) * rates.screenPremium;
   const custom = (Number(form.numScreensCustom) || 0) * (Number(form.customScreenPrice) || 0);
-  return standard + premium + custom;
+  const extraCustom = (form.customScreensExtra || []).reduce((sum, c) => sum + (Number(c.qty) || 0) * (Number(c.price) || 0), 0);
+  return standard + premium + custom + extraCustom;
 }
 
 function frameCostFor(form, rates) {
@@ -560,6 +562,12 @@ function buildItemizedLines(order, rates) {
   if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
   if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
   if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
+  (order.customScreensExtra || []).forEach((c) => {
+    const qty = Number(c.qty) || 0;
+    if (qty <= 0) return;
+    const price = Number(c.price) || 0;
+    lines.push(`${qty} screen${qty === 1 ? "" : "s"} @ $${price}/screen = $${Math.round(qty * price)}`);
+  });
 
   const feet = Number(order.frameFeet) || 0;
   if (feet > 0) {
@@ -618,7 +626,7 @@ function autoPatioPrice(form, rates) {
 function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrders }) {
   const [form, setForm] = useState(() => (initialData ? { ...emptyForm, ...initialData } : emptyForm));
   const [error, setError] = useState("");
-  const [showCustomScreen, setShowCustomScreen] = useState(!!(initialData && initialData.numScreensCustom));
+  const [showCustomScreen, setShowCustomScreen] = useState(!!(initialData && (initialData.numScreensCustom || (initialData.customScreensExtra || []).length > 0)));
   const [showCustomPatio, setShowCustomPatio] = useState(!!(initialData && initialData.numPatioCustom));
   const [showScreenHardware, setShowScreenHardware] = useState(!!(initialData && (initialData.screenHardwareQty || (initialData.screenHardwareExtra || []).length > 0)));
   const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && (initialData.patioHardwareQty || (initialData.patioHardwareExtra || []).length > 0)));
@@ -735,6 +743,9 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         numScreensPremium: Number(form.numScreensPremium) || 0,
         numScreensCustom: Number(form.numScreensCustom) || 0,
         customScreenPrice: Number(form.customScreenPrice) || 0,
+        customScreensExtra: (form.customScreensExtra || [])
+          .map((c) => ({ qty: Number(c.qty) || 0, price: Number(c.price) || 0 }))
+          .filter((c) => c.qty > 0),
         numPatioCustom: Number(form.numPatioCustom) || 0,
         customPatioPrice: Number(form.customPatioPrice) || 0,
         screenHardwarePrice: screenHardwareTotal(form),
@@ -897,6 +908,42 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}>Custom screen price</label>
                   <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.customScreenPrice} onChange={set("customScreenPrice")} placeholder="e.g. 55" />
                 </div>
+                {(form.customScreensExtra || []).map((c, i) => (
+                  <div key={i} className="col-span-2 grid grid-cols-2 gap-3 pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className={labelCls} style={{ color: COLORS.inkSoft, marginBottom: 0 }}># at custom price</label>
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, customScreensExtra: f.customScreensExtra.filter((_, idx) => idx !== i) }))}
+                          className="font-body text-xs underline"
+                          style={{ color: COLORS.inkSoft }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <input
+                        type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={c.qty}
+                        onChange={(e) => setForm((f) => ({ ...f, customScreensExtra: f.customScreensExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls} style={{ color: COLORS.inkSoft }}>Custom screen price</label>
+                      <input
+                        type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={c.price} placeholder="e.g. 55"
+                        onChange={(e) => setForm((f) => ({ ...f, customScreensExtra: f.customScreensExtra.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)) }))}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, customScreensExtra: [...(f.customScreensExtra || []), { qty: "", price: "" }] }))}
+                  className="col-span-2 flex items-center gap-1.5 text-xs font-body underline mt-1"
+                  style={{ color: COLORS.slate }}
+                >
+                  <Plus size={12} /> Add another custom price group
+                </button>
               </div>
             )}
             <button type="button" onClick={() => setShowScreenHardware((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
@@ -1267,6 +1314,9 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
                 {row("Screens", order.numScreens || 0)}
                 {order.numScreensPremium > 0 && row(`At $${rates.screenPremium}`, order.numScreensPremium)}
                 {order.numScreensCustom > 0 && row(`At custom price`, `${order.numScreensCustom} @ $${order.customScreenPrice}/ea`)}
+                {(order.customScreensExtra || []).map((c, i) => (
+                  Number(c.qty) > 0 && <React.Fragment key={i}>{row(`At custom price`, `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
+                ))}
                 {row("Frame", `${order.frameFeet || 0} ft · ${order.frameColor || "White"}${order.frameThickness && order.frameThickness !== "None" ? ` · ${order.frameThickness}` : ""}`)}
               </>
             )}
@@ -1356,6 +1406,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
   const [viewingCard, setViewingCard] = useState(false);
   const s = statusById[order.status] || STATUSES[0];
   const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+  const totalCustomScreens = (Number(order.numScreensCustom) || 0) + (order.customScreensExtra || []).reduce((sum, c) => sum + (Number(c.qty) || 0), 0);
   const { daysOpen, dueDate, isOverdue, showDue } = getOrderTiming(order, rates);
   const dividerStyle = { borderColor: COLORS.line };
 
@@ -1417,13 +1468,13 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             </p>
           )}
         </div>
-        {(order.numScreens > 0 || order.numScreensCustom > 0) && (
+        {(order.numScreens > 0 || totalCustomScreens > 0) && (
           <div className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <Layers size={13} color={COLORS.inkSoft} />
             <span>
               {order.numScreens > 0
-                ? `${order.numScreens} screen${order.numScreens === 1 ? "" : "s"}${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${order.numScreensCustom > 0 ? ` (+${order.numScreensCustom} custom)` : ""}`
-                : `${order.numScreensCustom} custom screen${order.numScreensCustom === 1 ? "" : "s"}`}
+                ? `${order.numScreens} screen${order.numScreens === 1 ? "" : "s"}${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${totalCustomScreens > 0 ? ` (+${totalCustomScreens} custom)` : ""}`
+                : `${totalCustomScreens} custom screen${totalCustomScreens === 1 ? "" : "s"}`}
               {order.frameFeet > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""}
             </span>
           </div>
