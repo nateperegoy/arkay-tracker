@@ -1145,7 +1145,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             {PAYMENT_METHODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </div>
-        {["venmo", "zelle"].includes(form.paymentMethod) && (
+        {["venmo", "zelle", "check"].includes(form.paymentMethod) && (
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
