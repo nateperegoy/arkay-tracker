@@ -454,6 +454,7 @@ const PAYMENT_METHODS = [
 ];
 
 const emptyForm = {
+  addToWave: false,
   dropOffDate: todayISO(),
   completionDate: "",
   pickupDate: "",
@@ -1144,6 +1145,17 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             {PAYMENT_METHODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </div>
+        {["cash", "venmo", "zelle"].includes(form.paymentMethod) && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.addToWave}
+              onChange={(e) => setForm((f) => ({ ...f, addToWave: e.target.checked }))}
+              className="w-4 h-4"
+            />
+            <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Add invoice to Wave</span>
+          </label>
+        )}
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Review request sent</label>
           <select
@@ -4997,7 +5009,7 @@ function InternalTracker() {
   };
   const changeStatus = (id, status) => {
     const order = orders.find((o) => o.id === id);
-    const doorNotBack = order && order.fullPatioReplacement && order.metroStatus !== "ready_for_pickup";
+    const doorNotBack = order && order.fullPatioReplacement && order.metroStatus !== "picked_up_from_metro";
     if (doorNotBack && (status === "picked_up" || status === "closed")) {
       setPendingStatusChange({ id, status, reason: "door" });
       return;
