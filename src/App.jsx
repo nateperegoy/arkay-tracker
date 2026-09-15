@@ -2016,7 +2016,7 @@ function TimeLogSection({ timeLogs, onSaveLog, orders, workProgress, onSaveWorkP
 // "customer-submissions" key — never directly in the live order list — so an
 // unauthenticated website visitor can't create a real order without review.
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
-function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
+function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
@@ -2047,6 +2047,9 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
     .filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0)
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
   const pickingUpToday = orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO());
+  const needsWaveInvoice = orders
+    .filter((o) => o.addToWave && o.status !== "closed")
+    .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
 
   return (
     <div className="space-y-6">
@@ -2062,7 +2065,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
             + Add Task
           </button>
         </div>
-        {sorted.length === 0 && pickedUp.length === 0 && needsAction.length === 0 && missingDetails.length === 0 && missingMonths.length === 0 && manualTasks.length === 0 && pickingUpToday.length === 0 ? (
+        {sorted.length === 0 && pickedUp.length === 0 && needsAction.length === 0 && missingDetails.length === 0 && missingMonths.length === 0 && manualTasks.length === 0 && pickingUpToday.length === 0 && needsWaveInvoice.length === 0 ? (
           <div className="rounded-lg border bg-white p-8 text-center" style={{ borderColor: COLORS.line }}>
             <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Nothing pending on your end right now.</p>
           </div>
@@ -2083,6 +2086,28 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       </div>
                       <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
                         <Eye size={14} color={COLORS.inkSoft} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {needsWaveInvoice.length > 0 && (
+              <>
+                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Needs Wave Invoice</p>
+                <div className="space-y-2">
+                  {needsWaveInvoice.map((order) => (
+                    <div key={order.id} className="rounded-xl border bg-white p-3 flex items-center justify-between gap-2" style={{ borderColor: COLORS.line }}>
+                      <div className="min-w-0">
+                        <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+                        <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{paymentLabel(order.paymentMethod)}</p>
+                      </div>
+                      <button
+                        onClick={() => onMarkWaveInvoiced(order.id)}
+                        className="font-body text-xs font-semibold rounded-full px-2.5 py-1 shrink-0"
+                        style={{ background: COLORS.canvasDark, color: COLORS.ink }}
+                      >
+                        Mark Invoiced
                       </button>
                     </div>
                   ))}
@@ -5033,6 +5058,7 @@ function InternalTracker() {
     setPendingStatusChange(null);
   };
   const changeMetroStatus = (id, metroStatus) => persist(orders.map((o) => (o.id === id ? { ...o, metroStatus } : o)));
+  const markWaveInvoiced = (id) => persist(orders.map((o) => (o.id === id ? { ...o, addToWave: false } : o)));
   const toggleReview = (id) => persist(orders.map((o) => (o.id === id ? { ...o, reviewRequestSent: !o.reviewRequestSent } : o)));
   const saveTimeLog = async (date, hours) => {
     const next = [...timeLogs.filter((l) => l.date !== date), { date, hours }];
@@ -5330,6 +5356,7 @@ function InternalTracker() {
             onDeleteOrder={deleteOrder}
             onOrderStatusChange={changeStatus}
             onMetroStatusChange={changeMetroStatus}
+            onMarkWaveInvoiced={markWaveInvoiced}
             onToggleReview={toggleReview}
             rates={rates}
             timeLogs={timeLogs}
