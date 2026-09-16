@@ -303,45 +303,18 @@ function voiceCallLink(raw) {
 // Tapping a phone number opens this instead of dialing directly — lets Nate pick call or
 // text, both via Google Voice specifically, rather than the device's default phone app.
 function PhoneLink({ phone, className }) {
-  const [open, setOpen] = useState(false);
   const display = formatPhone(phone) || "—";
   if (!phone) return <span className={className}>{display}</span>;
+  const handleClick = () => {
+    const digits = (phone || "").replace(/\D/g, "");
+    const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone;
+    navigator.clipboard.writeText(formattedNumber).catch(() => {});
+    window.location.href = voiceLink(phone);
+  };
   return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} className={className} style={{ color: COLORS.slate }}>
-        {display}
-      </button>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(false)}>
-          <div className="rounded-xl p-4 max-w-xs w-full bg-white" onClick={(e) => e.stopPropagation()} style={{ border: `1px solid ${COLORS.line}` }}>
-            <p className="font-display text-sm uppercase tracking-wide mb-3 text-center" style={{ color: COLORS.ink }}>{display}</p>
-            <a
-              href={voiceCallLink(phone)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 justify-center rounded-md py-2.5 mb-2 text-sm font-display uppercase tracking-wide text-white"
-              style={{ background: COLORS.slate }}
-            >
-              <Phone size={16} /> Call via Google Voice
-            </a>
-            <a
-              href={voiceLink(phone)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 justify-center rounded-md py-2.5 border text-sm font-display uppercase tracking-wide"
-              style={{ borderColor: COLORS.line, color: COLORS.ink }}
-            >
-              <MessageCircle size={16} /> Text via Google Voice
-            </a>
-            <button onClick={() => setOpen(false)} className="w-full text-center mt-3 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+    <button type="button" onClick={handleClick} className={className} style={{ color: COLORS.slate }}>
+      {display}
+    </button>
   );
 }
 
@@ -1620,6 +1593,16 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             </span>
           )}
           <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+          {(() => {
+            const extraCustom = (order.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
+            const items = (Number(order.numScreens) || 0) + (Number(order.numScreensPremium) || 0) + (Number(order.numScreensCustom) || 0) + extraCustom + (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0);
+            const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+            return (
+              <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>
+                {items} item{items === 1 ? "" : "s"} · {formatMoney(total)}
+              </p>
+            );
+          })()}
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
