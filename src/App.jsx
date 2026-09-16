@@ -5318,9 +5318,14 @@ function InternalTracker() {
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x snap-mandatory">
               {STATUSES.filter((s) => s.id !== "closed").map((s) => (
                 <div key={s.id} className="flex-shrink-0 snap-start" style={{ width: 290 }}>
-                  <div className="flex flex-wrap items-center gap-2 mb-3 px-1">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
-                    <span className="font-display text-sm uppercase tracking-wide" style={{ color: COLORS.ink }}>{s.label}</span>
+                  <div className="mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                      <span className="font-display text-sm uppercase tracking-wide" style={{ color: COLORS.ink }}>{s.label}</span>
+                      <span className="ml-auto text-xs font-body rounded-full px-2 py-0.5" style={{ background: s.soft, color: s.color }}>
+                        {grouped[s.id].length}
+                      </span>
+                    </div>
                     {grouped[s.id].length > 0 && (() => {
                       const totalItems = grouped[s.id].reduce((sum, o) => {
                         const extraCustom = (o.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
@@ -5328,14 +5333,11 @@ function InternalTracker() {
                       }, 0);
                       const totalDollars = grouped[s.id].reduce((sum, o) => sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0);
                       return (
-                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>
+                        <p className="font-body text-xs mt-0.5 pl-4" style={{ color: COLORS.inkSoft }}>
                           {totalItems} item{totalItems === 1 ? "" : "s"} · {formatMoney(totalDollars)}
-                        </span>
+                        </p>
                       );
                     })()}
-                    <span className="ml-auto text-xs font-body rounded-full px-2 py-0.5" style={{ background: s.soft, color: s.color }}>
-                      {grouped[s.id].length}
-                    </span>
                   </div>
                   {grouped[s.id].map((order) => (
                     <OrderCard
