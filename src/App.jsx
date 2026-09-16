@@ -283,7 +283,7 @@ function copyNumberThenMessage(phone, message) {
   const digits = (phone || "").replace(/\D/g, "");
   const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone || "";
   navigator.clipboard.writeText(formattedNumber).catch(() => {});
-  window.location.href = voiceLink(phone);
+  window.open(voiceLink(phone), "_blank", "noopener,noreferrer");
   setTimeout(() => {
     navigator.clipboard.writeText(message).catch(() => {});
   }, 3500);
@@ -309,7 +309,7 @@ function PhoneLink({ phone, className }) {
     const digits = (phone || "").replace(/\D/g, "");
     const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone;
     navigator.clipboard.writeText(formattedNumber).catch(() => {});
-    window.location.href = voiceLink(phone);
+    window.open(voiceLink(phone), "_blank", "noopener,noreferrer");
   };
   return (
     <button type="button" onClick={handleClick} className={className} style={{ color: COLORS.slate }}>
