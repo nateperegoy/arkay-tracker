@@ -268,11 +268,7 @@ function formatPhoneInput(value) {
 // commonly used but not officially documented by Google, so it isn't guaranteed to keep
 // working — if it just opens your general Voice inbox instead of the right thread, that's why.
 function voiceLink(raw) {
-  // Opens the native Google Voice app directly (confirmed real URL scheme), rather than the
-  // web version. No confirmed parameter exists for pre-filling a recipient within the app
-  // itself, so this just launches the app — the phone number still needs to be selected
-  // manually once inside it.
-  return "googlevoice://";
+  return "https://voice.google.com/";
 }
 
 // Copies the phone number first (so it's ready to paste into Google Voice's search/recipient
