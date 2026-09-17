@@ -5023,6 +5023,7 @@ function InternalTracker() {
       if (!order.paymentMethod) missing.push("a payment method");
       if (!order.pickupDate) missing.push("a pickup date");
       if (!order.reviewRequestSent) missing.push("a review request sent");
+      if (["venmo", "zelle", "check"].includes(order.paymentMethod) && !order.addToWave) missing.push("the Add invoice to Wave checkbox");
       if (missing.length > 0) {
         setPendingStatusChange({ id, status, reason: "missing", missing });
         return;
