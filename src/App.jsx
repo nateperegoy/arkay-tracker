@@ -1122,7 +1122,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
               onChange={(e) => setForm((f) => ({ ...f, addToWave: e.target.checked }))}
               className="w-4 h-4"
             />
-            <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Add invoice to Wave</span>
+            <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Added invoice to Wave</span>
           </label>
         )}
         <div>
@@ -2027,7 +2027,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
   const pickingUpToday = orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO());
   const needsWaveInvoice = orders
-    .filter((o) => o.addToWave && o.status !== "closed")
+    .filter((o) => ["venmo", "zelle", "check"].includes(o.paymentMethod) && !o.addToWave && o.status !== "closed")
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
 
   return (
@@ -2073,7 +2073,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
             )}
             {needsWaveInvoice.length > 0 && (
               <>
-                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Needs Wave Invoice</p>
+                <p className="font-display text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Create Invoice</p>
                 <div className="space-y-2">
                   {needsWaveInvoice.map((order) => (
                     <div key={order.id} className="rounded-xl border bg-white p-3 flex items-center justify-between gap-2" style={{ borderColor: COLORS.line }}>
@@ -5023,7 +5023,7 @@ function InternalTracker() {
       if (!order.paymentMethod) missing.push("a payment method");
       if (!order.pickupDate) missing.push("a pickup date");
       if (!order.reviewRequestSent) missing.push("a review request sent");
-      if (["venmo", "zelle", "check"].includes(order.paymentMethod) && !order.addToWave) missing.push("the Add invoice to Wave checkbox");
+      if (["venmo", "zelle", "check"].includes(order.paymentMethod) && !order.addToWave) missing.push("the Added invoice to Wave checkbox");
       if (missing.length > 0) {
         setPendingStatusChange({ id, status, reason: "missing", missing });
         return;
@@ -5038,7 +5038,7 @@ function InternalTracker() {
     setPendingStatusChange(null);
   };
   const changeMetroStatus = (id, metroStatus) => persist(orders.map((o) => (o.id === id ? { ...o, metroStatus } : o)));
-  const markWaveInvoiced = (id) => persist(orders.map((o) => (o.id === id ? { ...o, addToWave: false } : o)));
+  const markWaveInvoiced = (id) => persist(orders.map((o) => (o.id === id ? { ...o, addToWave: true } : o)));
   const toggleReview = (id) => persist(orders.map((o) => (o.id === id ? { ...o, reviewRequestSent: !o.reviewRequestSent } : o)));
   const saveTimeLog = async (date, hours) => {
     const next = [...timeLogs.filter((l) => l.date !== date), { date, hours }];
