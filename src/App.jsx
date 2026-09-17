@@ -2871,7 +2871,7 @@ function buildMonthlyFinancials(orders, monthlyExpenses) {
   return [...map.values()].sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month));
 }
 
-function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
+function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }) {
   const now = new Date();
   const [reportTab, setReportTab] = useState("overview");
   const [type, setType] = useState("monthly");
@@ -3043,8 +3043,56 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
     // most days had no work logged at all.
     const jobsPerDay = timeStats.daysWorked > 0 ? restrictedJobCount / timeStats.daysWorked : null;
     const screensPerDay = timeStats.daysWorked > 0 ? restrictedScreenCount / timeStats.daysWorked : null;
-    return { totalDaysInPeriod, avgScreensPerJob, jobsPerDay, screensPerDay };
-  }, [stats, range, orders, timeStats.daysWorked]);
+
+    // Frame color/thickness breakdown, and standard/premium/custom screen mix — both counted
+    // across jobs actually completed this period (filteredByCompletion), consistent with the
+    // rest of this tab.
+    const frameColorCounts = {};
+    const frameThicknessCounts = {};
+    let mixStandard = 0, mixPremium = 0, mixCustom = 0;
+    filteredByCompletion.forEach((o) => {
+      if (Number(o.frameFeet) > 0) {
+        const color = o.frameColor || "White";
+        frameColorCounts[color] = (frameColorCounts[color] || 0) + 1;
+        const thickness = o.frameThickness || "None";
+        frameThicknessCounts[thickness] = (frameThicknessCounts[thickness] || 0) + 1;
+      }
+      mixStandard += Number(o.numScreens) || 0;
+      mixPremium += Number(o.numScreensPremium) || 0;
+      const extraCustom = (o.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
+      mixCustom += (Number(o.numScreensCustom) || 0) + extraCustom;
+    });
+    const screenMix = { standard: mixStandard, premium: mixPremium, custom: mixCustom };
+
+    return { totalDaysInPeriod, avgScreensPerJob, jobsPerDay, screensPerDay, frameColorCounts, frameThicknessCounts, screenMix };
+  }, [stats, range, orders, timeStats.daysWorked, filteredByCompletion]);
+
+  // Current overdue orders — a live snapshot as of right now, not filtered by the selected
+  // reporting period, since "overdue" is inherently about today's date, not a historical window.
+  const overdueCount = useMemo(() => {
+    return orders.filter((o) => o.status !== "picked_up" && o.status !== "closed" && getOrderTiming(o, rates).isOverdue).length;
+  }, [orders, rates]);
+
+  // Revenue mix by category - decomposes the combined screenPrice/patioDoorPrice (which already
+  // bundle in frame and hardware costs) back into their separate component parts, using revenue's
+  // own pickup-date-anchored order set for consistency with the Revenue stat elsewhere.
+  const revenueMix = useMemo(() => {
+    let screens = 0, frame = 0, hardware = 0, patio = 0, fullReplacement = 0;
+    filteredByPickup.forEach((o) => {
+      const standard = (Number(o.numScreens) || 0) * rates.screen;
+      const premium = (Number(o.numScreensPremium) || 0) * rates.screenPremium;
+      const custom = (Number(o.numScreensCustom) || 0) * (Number(o.customScreenPrice) || 0);
+      const extraCustom = (o.customScreensExtra || []).reduce((sum, c) => sum + (Number(c.qty) || 0) * (Number(c.price) || 0), 0);
+      screens += standard + premium + custom + extraCustom;
+      frame += (Number(o.frameFeet) || 0) * frameRateFor(o.frameColor, rates);
+      hardware += screenHardwareTotal(o) + patioHardwareTotal(o);
+      const standardPatio = (Number(o.patioDoorCount) || 0) * rates.patioDoor;
+      const customPatio = (Number(o.numPatioCustom) || 0) * (Number(o.customPatioPrice) || 0);
+      patio += standardPatio + customPatio;
+      fullReplacement += o.fullPatioReplacement ? (Number(o.fullPatioReplacementPrice) || 0) : 0;
+    });
+    return { screens, frame, hardware, patio, fullReplacement, total: screens + frame + hardware + patio + fullReplacement };
+  }, [filteredByPickup, rates]);
 
   // Expenses tab: every logged month, most recent first, with revenue/profit computed from orders.
   const monthlyFinancials = useMemo(() => buildMonthlyFinancials(orders, monthlyExpenses), [orders, monthlyExpenses]);
@@ -3210,6 +3258,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
         <StatCard label="Frame ft" value={stats.totalFeet} />
         <StatCard label="Patio screens" value={stats.totalPatio} />
         <StatCard label="Revenue" value={formatMoney(stats.revenue)} accent={COLORS.sage} />
+        <StatCard label="Avg order value" value={stats.totalOrders > 0 ? formatMoney(stats.revenue / stats.totalOrders) : "—"} accent={COLORS.sage} />
         <StatCard label="Avg turnaround" value={stats.avgTurnaround !== null ? `${stats.avgTurnaround}d` : "—"} />
       </div>
 
@@ -3223,6 +3272,39 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+        <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Overdue Right Now</p>
+        <div className="flex items-center justify-between text-sm font-body rounded-md px-3 py-2" style={{ background: overdueCount > 0 ? "#F5E7E3" : COLORS.canvasDark }}>
+          <span style={{ color: COLORS.inkSoft }}>Orders past their due date</span>
+          <span className="font-mono font-semibold" style={{ color: overdueCount > 0 ? COLORS.stamp : COLORS.ink }}>{overdueCount}</span>
+        </div>
+        <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
+          This is a live count as of right now — not filtered by the period selected above, since overdue is always about today's date.
+        </p>
+      </div>
+
+      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+        <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Revenue Mix</p>
+        {revenueMix.total === 0 ? (
+          <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No revenue in this period.</p>
+        ) : (
+          <div className="space-y-1">
+            {[
+              ["Screens", revenueMix.screens],
+              ["Frame", revenueMix.frame],
+              ["Hardware", revenueMix.hardware],
+              ["Patio doors", revenueMix.patio],
+              ["Whole door replacement", revenueMix.fullReplacement],
+            ].filter(([, v]) => v > 0).map(([label, v]) => (
+              <div key={label} className="flex items-center justify-between text-sm font-body">
+                <span style={{ color: COLORS.inkSoft }}>{label}</span>
+                <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(v)} ({Math.round((v / revenueMix.total) * 100)}%)</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
@@ -3288,6 +3370,45 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress }) {
             <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
               Based on days you actually logged hours for via Save My Work, not every calendar day in the period — and only counting work from September 1, 2026 onward, even when viewing a broader period like quarterly or annual.
             </p>
+          </div>
+
+          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Screen type mix</p>
+            {jobStats.screenMix.standard + jobStats.screenMix.premium + jobStats.screenMix.custom === 0 ? (
+              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No screens in this period.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                <StatCard label="Standard" value={jobStats.screenMix.standard} />
+                <StatCard label="Premium" value={jobStats.screenMix.premium} />
+                <StatCard label="Custom" value={jobStats.screenMix.custom} />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Frame color & thickness</p>
+            {Object.keys(jobStats.frameColorCounts).length === 0 ? (
+              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No framed jobs in this period.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  {Object.entries(jobStats.frameColorCounts).sort((a, b) => b[1] - a[1]).map(([color, count]) => (
+                    <div key={color} className="flex items-center justify-between text-sm font-body">
+                      <span style={{ color: COLORS.inkSoft }}>{color}</span>
+                      <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(jobStats.frameThicknessCounts).sort((a, b) => b[1] - a[1]).map(([thickness, count]) => (
+                    <div key={thickness} className="flex items-center justify-between text-sm font-body">
+                      <span style={{ color: COLORS.inkSoft }}>{thickness}</span>
+                      <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
@@ -5369,7 +5490,7 @@ function InternalTracker() {
         ) : view === "complete" ? (
           <CompletePanel orders={orders} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} rates={rates} onLookupCustomer={lookupCustomer} />
         ) : (
-          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} workProgress={workProgress} />
+          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} workProgress={workProgress} rates={rates} />
         )}
 
         {saveError && (
