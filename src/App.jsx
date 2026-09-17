@@ -3250,16 +3250,22 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
         </div>
       )}
 
+      {overdueCount > 0 && (
+        <div className="rounded-lg p-3 flex items-center justify-between" style={{ background: "#F5E7E3" }}>
+          <span className="font-body text-sm font-semibold" style={{ color: COLORS.stamp }}>{overdueCount} order{overdueCount === 1 ? "" : "s"} overdue right now</span>
+          <span className="font-body text-xs" style={{ color: COLORS.stamp }}>as of today, not tied to the period below</span>
+        </div>
+      )}
+
       {reportTab === "overview" && (
       <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard label="Orders" value={stats.totalOrders} />
-        <StatCard label="Screens" value={stats.totalScreens} />
-        <StatCard label="Frame ft" value={stats.totalFeet} />
-        <StatCard label="Patio screens" value={stats.totalPatio} />
         <StatCard label="Revenue" value={formatMoney(stats.revenue)} accent={COLORS.sage} />
         <StatCard label="Avg order value" value={stats.totalOrders > 0 ? formatMoney(stats.revenue / stats.totalOrders) : "—"} accent={COLORS.sage} />
         <StatCard label="Avg turnaround" value={stats.avgTurnaround !== null ? `${stats.avgTurnaround}d` : "—"} />
+        <StatCard label="Repeat customers" value={repeatCustomerStats.repeatCustomers} />
+        <StatCard label="Repeat revenue share" value={repeatCustomerStats.revenueSharePct !== null ? `${repeatCustomerStats.revenueSharePct}%` : "—"} accent={COLORS.sage} />
       </div>
 
       <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
@@ -3274,49 +3280,39 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-        <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Overdue Right Now</p>
-        <div className="flex items-center justify-between text-sm font-body rounded-md px-3 py-2" style={{ background: overdueCount > 0 ? "#F5E7E3" : COLORS.canvasDark }}>
-          <span style={{ color: COLORS.inkSoft }}>Orders past their due date</span>
-          <span className="font-mono font-semibold" style={{ color: overdueCount > 0 ? COLORS.stamp : COLORS.ink }}>{overdueCount}</span>
+      <div className="rounded-lg border bg-white p-4 space-y-4" style={{ borderColor: COLORS.line }}>
+        <div>
+          <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Revenue Mix</p>
+          {revenueMix.total === 0 ? (
+            <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No revenue in this period.</p>
+          ) : (
+            <div className="space-y-1">
+              {[
+                ["Screens", revenueMix.screens],
+                ["Frame", revenueMix.frame],
+                ["Hardware", revenueMix.hardware],
+                ["Patio doors", revenueMix.patio],
+                ["Whole door replacement", revenueMix.fullReplacement],
+              ].filter(([, v]) => v > 0).map(([label, v]) => (
+                <div key={label} className="flex items-center justify-between text-sm font-body">
+                  <span style={{ color: COLORS.inkSoft }}>{label}</span>
+                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(v)} ({Math.round((v / revenueMix.total) * 100)}%)</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
-          This is a live count as of right now — not filtered by the period selected above, since overdue is always about today's date.
-        </p>
-      </div>
-
-      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-        <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Revenue Mix</p>
-        {revenueMix.total === 0 ? (
-          <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No revenue in this period.</p>
-        ) : (
-          <div className="space-y-1">
-            {[
-              ["Screens", revenueMix.screens],
-              ["Frame", revenueMix.frame],
-              ["Hardware", revenueMix.hardware],
-              ["Patio doors", revenueMix.patio],
-              ["Whole door replacement", revenueMix.fullReplacement],
-            ].filter(([, v]) => v > 0).map(([label, v]) => (
-              <div key={label} className="flex items-center justify-between text-sm font-body">
-                <span style={{ color: COLORS.inkSoft }}>{label}</span>
-                <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(v)} ({Math.round((v / revenueMix.total) * 100)}%)</span>
-              </div>
+        <div className="pt-3 border-t" style={{ borderColor: COLORS.line }}>
+          <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Payments Received</p>
+          <div className="flex flex-wrap gap-2">
+            {PAYMENT_METHODS.filter((p) => p.id).map((p) => (
+              <span key={p.id} className="font-body text-sm rounded-full px-3 py-1.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>
+                {p.label}: <strong className="font-mono">{stats.paymentCounts[p.id] || 0}</strong>
+              </span>
             ))}
           </div>
-        )}
-      </div>
-
-      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-        <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Payments Received</p>
-        <div className="flex flex-wrap gap-2">
-          {PAYMENT_METHODS.filter((p) => p.id).map((p) => (
-            <span key={p.id} className="font-body text-sm rounded-full px-3 py-1.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>
-              {p.label}: <strong className="font-mono">{stats.paymentCounts[p.id] || 0}</strong>
-            </span>
-          ))}
           {stats.unpaidCount > 0 && (
-            <p className="text-xs font-mono pt-1" style={{ color: COLORS.stamp }}>{stats.unpaidCount} order(s) not marked paid</p>
+            <p className="text-xs font-mono pt-2" style={{ color: COLORS.stamp }}>{stats.unpaidCount} order(s) not marked paid</p>
           )}
         </div>
       </div>
@@ -3372,43 +3368,44 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
             </p>
           </div>
 
-          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Screen type mix</p>
-            {jobStats.screenMix.standard + jobStats.screenMix.premium + jobStats.screenMix.custom === 0 ? (
-              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No screens in this period.</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Standard" value={jobStats.screenMix.standard} />
-                <StatCard label="Premium" value={jobStats.screenMix.premium} />
-                <StatCard label="Custom" value={jobStats.screenMix.custom} />
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Frame color & thickness</p>
-            {Object.keys(jobStats.frameColorCounts).length === 0 ? (
-              <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No framed jobs in this period.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  {Object.entries(jobStats.frameColorCounts).sort((a, b) => b[1] - a[1]).map(([color, count]) => (
-                    <div key={color} className="flex items-center justify-between text-sm font-body">
-                      <span style={{ color: COLORS.inkSoft }}>{color}</span>
-                      <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
-                    </div>
-                  ))}
+          <div className="rounded-lg border bg-white p-4 space-y-4" style={{ borderColor: COLORS.line }}>
+            <div>
+              <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Screen type mix</p>
+              {jobStats.screenMix.standard + jobStats.screenMix.premium + jobStats.screenMix.custom === 0 ? (
+                <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No screens in this period.</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  <StatCard label="Standard" value={jobStats.screenMix.standard} />
+                  <StatCard label="Premium" value={jobStats.screenMix.premium} />
+                  <StatCard label="Custom" value={jobStats.screenMix.custom} />
                 </div>
-                <div className="space-y-1">
-                  {Object.entries(jobStats.frameThicknessCounts).sort((a, b) => b[1] - a[1]).map(([thickness, count]) => (
-                    <div key={thickness} className="flex items-center justify-between text-sm font-body">
-                      <span style={{ color: COLORS.inkSoft }}>{thickness}</span>
-                      <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
-                    </div>
-                  ))}
+              )}
+            </div>
+            <div className="pt-3 border-t" style={{ borderColor: COLORS.line }}>
+              <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Frame color & thickness</p>
+              {Object.keys(jobStats.frameColorCounts).length === 0 ? (
+                <p className="text-sm font-body" style={{ color: COLORS.inkSoft }}>No framed jobs in this period.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    {Object.entries(jobStats.frameColorCounts).sort((a, b) => b[1] - a[1]).map(([color, count]) => (
+                      <div key={color} className="flex items-center justify-between text-sm font-body">
+                        <span style={{ color: COLORS.inkSoft }}>{color}</span>
+                        <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(jobStats.frameThicknessCounts).sort((a, b) => b[1] - a[1]).map(([thickness, count]) => (
+                      <div key={thickness} className="flex items-center justify-between text-sm font-body">
+                        <span style={{ color: COLORS.inkSoft }}>{thickness}</span>
+                        <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
@@ -3449,9 +3446,9 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCard label="Hours logged" value={timeStats.totalHours.toFixed(1)} />
             <StatCard label="Days worked" value={`${timeStats.daysWorked} of ${timeStats.totalDaysInPeriod}`} />
-            <StatCard label="Revenue" value={formatMoney(stats.revenue)} accent={COLORS.sage} />
             <StatCard label="$ / hour" value={timeStats.perHour !== null ? formatMoney(timeStats.perHour) : "—"} accent={COLORS.sage} />
             <StatCard label="$ / day worked" value={timeStats.perDayWorked !== null ? formatMoney(timeStats.perDayWorked) : "—"} />
+            <StatCard label="$ / calendar day" value={timeStats.perDayOverall !== null ? formatMoney(timeStats.perDayOverall) : "—"} />
             <StatCard label="Avg hours / day worked" value={timeStats.avgHoursPerDayWorked !== null ? timeStats.avgHoursPerDayWorked.toFixed(1) : "—"} />
           </div>
 
@@ -3467,16 +3464,6 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
             </div>
             <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
               Based only on progress actually logged in "What I Got Done" — a day with hours logged but no completion entries won't count toward these, so they may run lower than reality until logging becomes a habit.
-            </p>
-          </div>
-          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Zoomed out — whole period, including days off</p>
-            <div className="flex items-center justify-between text-sm font-body rounded-md px-3 py-2" style={{ background: COLORS.canvasDark }}>
-              <span style={{ color: COLORS.inkSoft }}>$ / calendar day ({timeStats.totalDaysInPeriod} days)</span>
-              <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{timeStats.perDayOverall !== null ? formatMoney(timeStats.perDayOverall) : "—"}</span>
-            </div>
-            <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
-              This one includes days you didn't work at all — useful for "how much did this period really average out to," separate from your per-worked-day rate above.
             </p>
           </div>
 
@@ -3499,43 +3486,44 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
             </div>
           )}
 
-          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>By day of week (this period)</p>
-            <div className="space-y-1.5">
-              {timeStats.byDayOfWeek.map((d) => {
-                const maxHours = Math.max(...timeStats.byDayOfWeek.map((x) => x.hours), 1);
-                return (
-                  <div key={d.label} className="flex items-center gap-2 text-xs font-body">
-                    <span className="w-9 shrink-0" style={{ color: COLORS.inkSoft }}>{d.label}</span>
-                    <div className="flex-1 h-2 rounded-full" style={{ background: COLORS.canvasDark }}>
-                      <div className="h-2 rounded-full" style={{ width: `${(d.hours / maxHours) * 100}%`, background: COLORS.sage }} />
+          <div className="rounded-lg border bg-white p-4 space-y-4" style={{ borderColor: COLORS.line }}>
+            <div>
+              <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>By day of week (this period)</p>
+              <div className="space-y-1.5">
+                {timeStats.byDayOfWeek.map((d) => {
+                  const maxHours = Math.max(...timeStats.byDayOfWeek.map((x) => x.hours), 1);
+                  return (
+                    <div key={d.label} className="flex items-center gap-2 text-xs font-body">
+                      <span className="w-9 shrink-0" style={{ color: COLORS.inkSoft }}>{d.label}</span>
+                      <div className="flex-1 h-2 rounded-full" style={{ background: COLORS.canvasDark }}>
+                        <div className="h-2 rounded-full" style={{ width: `${(d.hours / maxHours) * 100}%`, background: COLORS.sage }} />
+                      </div>
+                      <span className="w-14 text-right font-mono" style={{ color: COLORS.ink }}>{d.hours.toFixed(1)}h</span>
                     </div>
-                    <span className="w-14 text-right font-mono" style={{ color: COLORS.ink }}>{d.hours.toFixed(1)}h</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Last 8 weeks — recent trend</p>
-            <div className="space-y-1.5">
-              {timeStats.weeklyTrend.map((w) => {
-                const maxHours = Math.max(...timeStats.weeklyTrend.map((x) => x.hours), 1);
-                return (
-                  <div key={w.label} className="flex items-center gap-2 text-xs font-body">
-                    <span className="w-24 shrink-0" style={{ color: COLORS.inkSoft }}>{w.label}</span>
-                    <div className="flex-1 h-2 rounded-full" style={{ background: COLORS.canvasDark }}>
-                      <div className="h-2 rounded-full" style={{ width: `${(w.hours / maxHours) * 100}%`, background: COLORS.slate }} />
+            <div className="pt-3 border-t" style={{ borderColor: COLORS.line }}>
+              <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Last 8 weeks — recent trend</p>
+              <div className="space-y-1.5">
+                {timeStats.weeklyTrend.map((w) => {
+                  const maxHours = Math.max(...timeStats.weeklyTrend.map((x) => x.hours), 1);
+                  return (
+                    <div key={w.label} className="flex items-center gap-2 text-xs font-body">
+                      <span className="w-24 shrink-0" style={{ color: COLORS.inkSoft }}>{w.label}</span>
+                      <div className="flex-1 h-2 rounded-full" style={{ background: COLORS.canvasDark }}>
+                        <div className="h-2 rounded-full" style={{ width: `${(w.hours / maxHours) * 100}%`, background: COLORS.slate }} />
+                      </div>
+                      <span className="w-14 text-right font-mono" style={{ color: COLORS.ink }}>{w.hours.toFixed(1)}h</span>
                     </div>
-                    <span className="w-14 text-right font-mono" style={{ color: COLORS.ink }}>{w.hours.toFixed(1)}h</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
+                Independent of the period selector above — always shows the last 8 calendar weeks, so a busy stretch is easy to spot regardless of what you've got selected.
+              </p>
             </div>
-            <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
-              Independent of the period selector above — always shows the last 8 calendar weeks, so a busy stretch is easy to spot regardless of what you've got selected.
-            </p>
           </div>
         </div>
       )}
@@ -3648,8 +3636,6 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
           {financialsView === "metrics" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <StatCard label="Repeat customers" value={repeatCustomerStats.repeatCustomers} />
-                <StatCard label="Repeat revenue share" value={repeatCustomerStats.revenueSharePct !== null ? `${repeatCustomerStats.revenueSharePct}%` : "—"} accent={COLORS.sage} />
                 <StatCard label="Lifetime net profit" value={formatMoney(netPerHourStats.netProfit)} />
                 <StatCard label="Net $ / hour" value={netPerHourStats.netPerHour !== null ? formatMoney(netPerHourStats.netPerHour) : "—"} accent={COLORS.sage} />
               </div>
