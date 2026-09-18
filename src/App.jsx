@@ -1995,10 +1995,12 @@ function TimeLogSection({ timeLogs, onSaveLog, orders, workProgress, onSaveWorkP
 // "customer-submissions" key — never directly in the live order list — so an
 // unauthenticated website visitor can't create a real order without review.
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
-function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
+function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onSnoozeTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
+  const [snoozeTaskId, setSnoozeTaskId] = useState(null);
+  const [snoozeDays, setSnoozeDays] = useState("1");
   const [pendingExpenseAmount, setPendingExpenseAmount] = useState({});
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [taskOrderId, setTaskOrderId] = useState("");
@@ -2409,7 +2411,42 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         >
                           Done
                         </button>
+                        <button
+                          onClick={() => { setSnoozeTaskId(task.id); setSnoozeDays("1"); }}
+                          className="font-display text-xs uppercase tracking-wide underline"
+                          style={{ color: COLORS.inkSoft }}
+                        >
+                          Snooze
+                        </button>
                       </div>
+                      {snoozeTaskId === task.id && (
+                        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                          <label className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Snooze for</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={snoozeDays}
+                            onChange={(e) => setSnoozeDays(e.target.value)}
+                            className="rounded-md border px-2 py-1 text-sm font-mono w-16"
+                            style={{ borderColor: COLORS.line, color: COLORS.ink }}
+                          />
+                          <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>day{Number(snoozeDays) === 1 ? "" : "s"}</span>
+                          <button
+                            onClick={() => { onSnoozeTask(task.id, snoozeDays); setSnoozeTaskId(null); }}
+                            className="font-display text-xs uppercase tracking-wide underline"
+                            style={{ color: COLORS.slate }}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setSnoozeTaskId(null)}
+                            className="font-body text-xs underline"
+                            style={{ color: COLORS.inkSoft }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -5228,6 +5265,11 @@ function InternalTracker() {
     persistManualTasks(manualTasks.filter((t) => t.id !== id));
   };
 
+  const snoozeManualTask = (id, days) => {
+    const newDueDate = addDays(todayISO(), Number(days) || 0);
+    persistManualTasks(manualTasks.map((t) => (t.id === id ? { ...t, dueDate: newDueDate } : t)));
+  };
+
   const importSubmission = (sub) => {
     const dimensionNotes = [];
     if (sub.patioScreenWidth && sub.patioScreenHeight) dimensionNotes.push(`Patio screen inside dims: ${sub.patioScreenWidth}"×${sub.patioScreenHeight}"`);
@@ -5468,6 +5510,7 @@ function InternalTracker() {
             manualTasks={manualTasks}
             onAddTask={addManualTask}
             onCompleteTask={completeManualTask}
+            onSnoozeTask={snoozeManualTask}
             onRetryTodoistSync={retryTodoistSync}
             workProgress={workProgress}
             onSaveWorkProgress={saveWorkProgress}
