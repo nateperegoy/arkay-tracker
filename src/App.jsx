@@ -5380,7 +5380,7 @@ function InternalTracker() {
       <GlobalStyle />
 
       {/* Header */}
-      <div className="sticky top-0 z-30 shadow-sm bg-white" style={{ borderBottom: `1px solid ${COLORS.line}` }}>
+      <div className="sticky top-0 z-30 shadow-sm bg-white overflow-x-hidden" style={{ borderBottom: `1px solid ${COLORS.line}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <img src={LOGO_ICON_NAME} alt="Arkay Window Screens" className="h-9 w-auto shrink-0 sm:hidden" />
           <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="hidden sm:block h-10 md:h-11 w-auto shrink-0" />
