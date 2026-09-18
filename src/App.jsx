@@ -1995,12 +1995,14 @@ function TimeLogSection({ timeLogs, onSaveLog, orders, workProgress, onSaveWorkP
 // "customer-submissions" key — never directly in the live order list — so an
 // unauthenticated website visitor can't create a real order without review.
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
-function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onSnoozeTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
+function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onSnoozeOrderFlag, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onSnoozeTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
   const [snoozeTaskId, setSnoozeTaskId] = useState(null);
   const [snoozeDays, setSnoozeDays] = useState("1");
+  const [snoozeFlagOrderId, setSnoozeFlagOrderId] = useState(null);
+  const [snoozeFlagDays, setSnoozeFlagDays] = useState("1");
   const [pendingExpenseAmount, setPendingExpenseAmount] = useState({});
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [taskOrderId, setTaskOrderId] = useState("");
@@ -2025,7 +2027,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
   const missingMonths = getMissingExpenseMonths(monthlyExpenses);
   const needsAction = orders
-    .filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0)
+    .filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0 && (!o.flagSnoozedUntil || o.flagSnoozedUntil <= todayISO()))
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
   const pickingUpToday = orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO());
   const needsWaveInvoice = orders
@@ -2522,10 +2524,47 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         ) : (
                           <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{reasons.join(", ")}</span>
                         )}
-                        <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
-                          <Eye size={14} color={COLORS.inkSoft} />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => { setSnoozeFlagOrderId(order.id); setSnoozeFlagDays("1"); }}
+                            className="font-display text-xs uppercase tracking-wide underline"
+                            style={{ color: COLORS.inkSoft }}
+                          >
+                            Snooze
+                          </button>
+                          <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
+                            <Eye size={14} color={COLORS.inkSoft} />
+                          </button>
+                        </div>
                       </div>
+                      {snoozeFlagOrderId === order.id && (
+                        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                          <label className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Snooze for</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={snoozeFlagDays}
+                            onChange={(e) => setSnoozeFlagDays(e.target.value)}
+                            className="rounded-md border px-2 py-1 text-sm font-mono w-16"
+                            style={{ borderColor: COLORS.line, color: COLORS.ink }}
+                          />
+                          <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>day{Number(snoozeFlagDays) === 1 ? "" : "s"}</span>
+                          <button
+                            onClick={() => { onSnoozeOrderFlag(order.id, snoozeFlagDays); setSnoozeFlagOrderId(null); }}
+                            className="font-display text-xs uppercase tracking-wide underline"
+                            style={{ color: COLORS.slate }}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setSnoozeFlagOrderId(null)}
+                            className="font-body text-xs underline"
+                            style={{ color: COLORS.inkSoft }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -5183,6 +5222,7 @@ function InternalTracker() {
   };
   const changeMetroStatus = (id, metroStatus) => persist(orders.map((o) => (o.id === id ? { ...o, metroStatus } : o)));
   const markWaveInvoiced = (id) => persist(orders.map((o) => (o.id === id ? { ...o, addToWave: true } : o)));
+  const snoozeOrderFlag = (id, days) => persist(orders.map((o) => (o.id === id ? { ...o, flagSnoozedUntil: addDays(todayISO(), Number(days) || 0) } : o)));
   const toggleReview = (id) => persist(orders.map((o) => (o.id === id ? { ...o, reviewRequestSent: !o.reviewRequestSent } : o)));
   const saveTimeLog = async (date, hours) => {
     const next = [...timeLogs.filter((l) => l.date !== date), { date, hours }];
@@ -5500,6 +5540,7 @@ function InternalTracker() {
             onOrderStatusChange={changeStatus}
             onMetroStatusChange={changeMetroStatus}
             onMarkWaveInvoiced={markWaveInvoiced}
+            onSnoozeOrderFlag={snoozeOrderFlag}
             onToggleReview={toggleReview}
             rates={rates}
             timeLogs={timeLogs}
