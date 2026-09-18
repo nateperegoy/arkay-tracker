@@ -87,6 +87,7 @@ const statusById = Object.fromEntries(STATUSES.map((s) => [s.id, s]));
 // A separate, simpler status just for tracking full patio doors at Metro Screenworks —
 // distinct from the main 5-stage order status, which stays "In Progress" the whole time.
 const METRO_STATUSES = [
+  { id: "waiting_on_customer", label: "Waiting on Customer", color: "#8B7355", soft: "#F0EBE3" },
   { id: "need_to_order", label: "Need to Order", color: "#B23A2E", soft: "#F5E7E3" },
   { id: "ordered", label: "Ordered", color: "#8B4A3D", soft: "#F5E7E3" },
   { id: "ready_for_pickup", label: "Ready for Pick Up at Metro", color: "#5B8C82", soft: "#E5EFED" },
