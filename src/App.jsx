@@ -2422,7 +2422,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         </button>
                       </div>
                       {snoozeTaskId === task.id && (
-                        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
                           <label className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Snooze for</label>
                           <input
                             type="number"
@@ -2538,7 +2538,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         </div>
                       </div>
                       {snoozeFlagOrderId === order.id && (
-                        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t" style={{ borderColor: COLORS.line }}>
                           <label className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Snooze for</label>
                           <input
                             type="number"
@@ -3495,12 +3495,12 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
                   .map((o) => {
                     const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
                     return (
-                      <div key={o.id} className="flex items-center justify-between text-sm font-body py-1.5 border-b" style={{ borderColor: COLORS.line }}>
-                        <div>
+                      <div key={o.id} className="flex items-center justify-between gap-2 text-sm font-body py-1.5 border-b" style={{ borderColor: COLORS.line }}>
+                        <div className="min-w-0 truncate">
                           <span style={{ color: COLORS.ink }}>{o.customerName}</span>
                           <span className="ml-2 text-xs" style={{ color: COLORS.inkSoft }}>{formatDate(jobAnchorDate(o))}</span>
                         </div>
-                        <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(revenue)}</span>
+                        <span className="font-mono font-semibold shrink-0" style={{ color: COLORS.ink }}>{formatMoney(revenue)}</span>
                       </div>
                     );
                   })}
