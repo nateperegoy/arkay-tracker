@@ -5054,6 +5054,21 @@ export default function AppRoot() {
     return () => window.removeEventListener("wheel", handleWheel);
   }, []);
 
+  // Selects a field's existing text the moment it's focused, so typing replaces a pre-populated
+  // value (like a saved "0") instead of appending to it — applied once, globally, the same way
+  // as the wheel fix above, so every text/number field across the whole app gets this without
+  // needing to touch each one individually.
+  useEffect(() => {
+    const handleFocusIn = (e) => {
+      const el = e.target;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && el.type !== "checkbox" && el.type !== "radio" && el.type !== "file") {
+        el.select();
+      }
+    };
+    document.addEventListener("focusin", handleFocusIn);
+    return () => document.removeEventListener("focusin", handleFocusIn);
+  }, []);
+
   if (checkingTrust) return null;
   if (view === "landing") return <LandingPage onChoose={setView} />;
   if (view === "estimate") return <CustomerRequestForm initialRequestType="estimate" onBackToLanding={() => setView("landing")} />;
