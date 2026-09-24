@@ -1462,7 +1462,6 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
 
       <div className="space-y-2 font-body text-sm">
         <div className="space-y-0.5 text-xs" style={{ color: COLORS.inkSoft }}>
-          <p>Dropped off on {formatDateWithDay(order.dropOffDate)}</p>
           {showDue && (
             <p style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
               Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
@@ -1631,12 +1630,11 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             );
           })()}
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
-          <div className="font-body text-xs" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
-            <p>Dropped off on {formatDateWithDay(order.dropOffDate)}</p>
-            {showDue && (
-              <p>Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}</p>
-            )}
-          </div>
+          {showDue && (
+            <p className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
+              Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <CategoryIcons order={order} />
