@@ -367,7 +367,7 @@ function buildPickupICS(order) {
   const dateDigits = order.pickupDate.replace(/-/g, "");
   const endDate = addDays(order.pickupDate, 1).replace(/-/g, "");
   const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
   const descParts = [`Phone: ${formatPhone(order.phone) || "—"}`];
   if (order.pickupTimeNote) descParts.push(`Time: ${order.pickupTimeNote}`);
   descParts.push(`Total: ${formatMoney(total)}`);
@@ -512,6 +512,17 @@ function autoScreenPrice(form, rates) {
   return standard + premium + custom + extraCustom;
 }
 
+// Total item count (screens + patio doors, including extra custom-priced groups) - used both for
+// the rush order surcharge and various item-count displays throughout the app.
+function totalItemCount(form) {
+  const extraCustom = (form.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
+  return (Number(form.numScreens) || 0) + (Number(form.numScreensPremium) || 0) + (Number(form.numScreensCustom) || 0) + extraCustom + (Number(form.patioDoorCount) || 0) + (Number(form.numPatioCustom) || 0);
+}
+
+function rushSurchargeFor(form, rates) {
+  return form.isRush ? totalItemCount(form) * (rates.rushSurchargePerItem || 10) : 0;
+}
+
 function frameCostFor(form, rates) {
   return (Number(form.frameFeet) || 0) * frameRateFor(form.frameColor, rates);
 }
@@ -588,6 +599,10 @@ function buildItemizedLines(order, rates) {
     lines.push(amt > 0 ? `Whole door replacement = $${Math.round(amt)}` : `Whole door replacement = price pending`);
   }
 
+  if (order.isRush && Number(order.rushSurchargePrice) > 0) {
+    lines.push(`Rush order surcharge = $${Math.round(Number(order.rushSurchargePrice))}`);
+  }
+
   return lines;
 }
 
@@ -650,6 +665,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
 
   const screenSubtotal = autoScreenSubtotal(form, rates);
   const patioSubtotal = autoPatioPrice(form, rates);
+  const rushSurcharge = rushSurchargeFor(form, rates);
 
   // Builds the plain-language breakdown shown under Window Screens,
   // e.g. "$105 for screen (3 x $35/ea) + $9 for frame (3ft x $3/ft, White)".
@@ -700,7 +716,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   // same format as the read-only card's Job Summary, built live from the form as you type.
   const jobSummaryText = (() => {
     const lines = buildItemizedLines(form, rates);
-    const total = screenSubtotal + patioSubtotal + (form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0);
+    const total = screenSubtotal + patioSubtotal + rushSurcharge + (form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0);
     return [...lines, `Total = $${Math.round(total)}`].join("\n");
   })();
 
@@ -745,6 +761,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         patioDoorCount: Number(form.patioDoorCount) || 0,
         patioDoorPrice: patioSubtotal,
         fullPatioReplacementPrice: form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0,
+        rushSurchargePrice: rushSurcharge,
         subcontractorJobNumber: form.subcontractorJobNumber.trim(),
       });
     } catch (err) {
@@ -779,7 +796,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           if (mostRecentScreenTotal > 0) parts.push(`${mostRecentScreenTotal} screen${mostRecentScreenTotal === 1 ? "" : "s"}`);
           if (mostRecentPatioTotal > 0) parts.push(`${mostRecentPatioTotal} patio screen${mostRecentPatioTotal === 1 ? "" : "s"}`);
           if (mostRecent.fullPatioReplacement) parts.push("whole door replacement");
-          const total = (Number(mostRecent.screenPrice) || 0) + (Number(mostRecent.patioDoorPrice) || 0) + (Number(mostRecent.fullPatioReplacementPrice) || 0);
+          const total = (Number(mostRecent.screenPrice) || 0) + (Number(mostRecent.patioDoorPrice) || 0) + (Number(mostRecent.fullPatioReplacementPrice) || 0) + (Number(mostRecent.rushSurchargePrice) || 0);
           return (
             <div className="rounded-lg p-3" style={{ background: "#EAF3F9" }}>
               <p className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>
@@ -1150,7 +1167,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
       <div className="flex items-center justify-between pt-1">
         <span className="text-xs font-display uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Total</span>
         <span className="font-body font-semibold text-lg" style={{ color: COLORS.ink }}>
-          {formatMoney(screenSubtotal + patioSubtotal + (form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0))}
+          {formatMoney(screenSubtotal + patioSubtotal + rushSurcharge + (form.fullPatioReplacement ? (Number(form.fullPatioReplacementPrice) || 0) : 0))}
         </span>
       </div>
 
@@ -1206,7 +1223,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [copied, setCopied] = useState(false);
   const s = statusById[order.status] || STATUSES[0];
-  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
   // Same matching rule used everywhere else — name or phone match, excluding this order itself.
   const repeatCount = (() => {
     if (!allOrders) return 0;
@@ -1330,6 +1347,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
                 {row("Date ordered", order.subcontractorOrderedDate ? formatDate(order.subcontractorOrderedDate) : "—")}
               </>
             )}
+            {order.isRush && Number(order.rushSurchargePrice) > 0 && row("Rush order surcharge", formatMoney(order.rushSurchargePrice))}
           </div>
         )}
 
@@ -1394,7 +1412,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
 function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, onLookupCustomer }) {
   const [viewingCard, setViewingCard] = useState(false);
   const s = statusById[order.status] || STATUSES[0];
-  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
   const totalCustomScreens = (Number(order.numScreensCustom) || 0) + (order.customScreensExtra || []).reduce((sum, c) => sum + (Number(c.qty) || 0), 0);
   const { daysOpen, dueDate, isOverdue, showDue } = getOrderTiming(order, rates);
   const dividerStyle = { borderColor: COLORS.line };
@@ -1605,7 +1623,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
           {(() => {
             const extraCustom = (order.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
             const items = (Number(order.numScreens) || 0) + (Number(order.numScreensPremium) || 0) + (Number(order.numScreensCustom) || 0) + extraCustom + (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0);
-            const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+            const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
             return (
               <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>
                 {items} item{items === 1 ? "" : "s"} · {formatMoney(total)}
@@ -2714,7 +2732,7 @@ function CompletePanel({ orders, onEdit, onDelete, onStatusChange, rates, onLook
               <p className="font-display text-xs uppercase tracking-wide mb-1 mt-2" style={{ color: COLORS.inkSoft }}>{group.label}</p>
               <div>
                 {group.orders.map((order) => {
-                  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+                  const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
                   const repeatCount = countForCustomer(order);
                   return (
                     <div key={order.id} className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line }}>
@@ -2843,7 +2861,7 @@ function StatCard({ label, value, accent }) {
 
 /* ---------------------------------- REPORTS ---------------------------------- */
 function computeTrend(type, orders, ctx) {
-  const rev = (o) => (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+  const rev = (o) => (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
 
   let buckets, getBucketIndex;
   if (type === "monthly") {
@@ -2945,7 +2963,7 @@ function buildMonthlyFinancials(orders, monthlyExpenses) {
     if (!anchor || anchor < REPORTS_START_DATE) return;
     const d = new Date(anchor + "T00:00:00");
     const k = key(d.getFullYear(), d.getMonth() + 1);
-    const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+    const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
     const existing = map.get(k) || { year: d.getFullYear(), month: d.getMonth() + 1, income: 0, expenses: null };
     existing.income = (existing.income || 0) + revenue;
     map.set(k, existing);
@@ -3019,7 +3037,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
     const totalScreens = filteredByCompletion.reduce((a, o) => a + (Number(o.numScreens) || 0) + (Number(o.numScreensPremium) || 0) + (Number(o.numScreensCustom) || 0), 0);
     const totalFeet = filteredByCompletion.reduce((a, o) => a + (Number(o.frameFeet) || 0), 0);
     const totalPatio = filteredByCompletion.reduce((a, o) => a + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0), 0);
-    const revenue = filteredByPickup.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0);
+    const revenue = filteredByPickup.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0), 0);
     const statusCounts = Object.fromEntries(STATUSES.map((s) => [s.id, 0]));
     filteredByCompletion.forEach((o) => { if (statusCounts[o.status] !== undefined) statusCounts[o.status] += 1; });
     const turnarounds = filteredByCompletion.filter((o) => o.completionDate).map((o) => daysBetween(o.dropOffDate, o.completionDate));
@@ -3050,7 +3068,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
       if (!anchor || anchor < HOURLY_STATS_START_DATE) return sum;
       const d = new Date(anchor + "T00:00:00");
       if (d < range.start || d > range.end) return sum;
-      return sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+      return sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
     }, 0);
     const totalHours = inRange.reduce((a, l) => a + (Number(l.hours) || 0), 0);
     const daysWorked = inRange.filter((l) => Number(l.hours) > 0).length;
@@ -3249,7 +3267,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
       const phoneKey = (o.phone || "").replace(/\D/g, "");
       const k = phoneKey.length >= 7 ? phoneKey : nameKey;
       if (!k) return;
-      const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+      const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
       const existing = groups.get(k) || { count: 0, revenue: 0 };
       existing.count += 1;
       existing.revenue += revenue;
@@ -3509,7 +3527,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
                 {[...filtered]
                   .sort((a, b) => (jobAnchorDate(a) < jobAnchorDate(b) ? -1 : jobAnchorDate(a) > jobAnchorDate(b) ? 1 : 0))
                   .map((o) => {
-                    const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0);
+                    const revenue = (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
                     return (
                       <div key={o.id} className="flex items-center justify-between gap-2 text-sm font-body py-1.5 border-b" style={{ borderColor: COLORS.line }}>
                         <div className="min-w-0 truncate">
@@ -3522,7 +3540,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
                   })}
                 <div className="flex items-center justify-between text-sm font-body pt-2">
                   <span className="font-display uppercase tracking-wide text-xs" style={{ color: COLORS.inkSoft }}>Total for these jobs</span>
-                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(filtered.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0))}</span>
+                  <span className="font-mono font-semibold" style={{ color: COLORS.ink }}>{formatMoney(filtered.reduce((a, o) => a + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0), 0))}</span>
                 </div>
                 <p className="text-xs font-body italic pt-1" style={{ color: COLORS.inkSoft }}>
                   This total may not match "Revenue" above — that figure counts by pickup date, not completion date, so a job finished this period but picked up in a different one will show here but count toward revenue elsewhere.
@@ -3789,7 +3807,7 @@ function QuickLinksPanel({ rates, orders }) {
     const order = orders.find((o) => o.id === id);
     if (!order) return;
     setCustomerName((order.customerName || "").split(" ")[0] || "");
-    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
     setOrderTotal(total > 0 ? String(total) : "");
   };
 
@@ -5539,7 +5557,7 @@ function InternalTracker() {
                         const extraCustom = (o.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
                         return sum + (Number(o.numScreens) || 0) + (Number(o.numScreensPremium) || 0) + (Number(o.numScreensCustom) || 0) + extraCustom + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0);
                       }, 0);
-                      const totalDollars = grouped[s.id].reduce((sum, o) => sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0), 0);
+                      const totalDollars = grouped[s.id].reduce((sum, o) => sum + (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0), 0);
                       return (
                         <p className="font-body text-xs mt-0.5 pl-4" style={{ color: COLORS.inkSoft }}>
                           {totalItems} item{totalItems === 1 ? "" : "s"} · {formatMoney(totalDollars)}
@@ -5665,7 +5683,7 @@ function InternalTracker() {
                 <div className="rounded-xl border bg-white max-h-80 overflow-y-auto" style={{ borderColor: COLORS.line }}>
                   {results.map((order) => {
                     const s = statusById[order.status] || STATUSES[0];
-                    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0);
+                    const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
                     return (
                       <div key={order.id} className="p-3 border-b space-y-1.5" style={{ borderColor: COLORS.line }}>
                         <div>
