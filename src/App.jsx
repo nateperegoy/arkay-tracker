@@ -5357,7 +5357,6 @@ function InternalTracker() {
       const h = `${sub.fullDoorHeightWhole || 0}${sub.fullDoorHeightFraction && sub.fullDoorHeightFraction !== "0" ? ` ${sub.fullDoorHeightFraction}` : ""}"`;
       dimensionNotes.push(`Whole door outside dims: ${w}×${h}`);
     }
-    if (sub.frameThickness) dimensionNotes.push(`Frame thickness: ${sub.frameThickness}`);
     if (sub.hasOversizedScreens) {
       dimensionNotes.push(`Oversized screens: ${sub.oversizedScreenCount || "some"}${sub.oversizedScreenWidth ? ` at ${sub.oversizedScreenWidth}" wide` : ""}`);
     }
@@ -5380,6 +5379,7 @@ function InternalTracker() {
       frameFeet: sub.frameFeet || 0,
       frameColor: FRAME_COLORS.includes(sub.frameColor) ? sub.frameColor : (sub.frameColor || "White"),
       frameColorOther: FRAME_COLORS.includes(sub.frameColor) ? "" : (sub.frameColor || ""),
+      frameThickness: sub.frameThickness || "None",
       screenPrice: (sub.numScreens || 0) * rates.screen + (sub.frameFeet || 0) * frameRateFor(sub.frameColor, rates),
       patioDoorCount: sub.patioScreenCount || 0, patioDoorPrice: (sub.patioScreenCount || 0) * rates.patioDoor,
       fullPatioReplacement: !!sub.fullDoorReplacement, fullPatioReplacementPrice: 0,
