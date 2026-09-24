@@ -244,6 +244,13 @@ function formatDate(str) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function formatDateWithDay(str) {
+  if (!str) return "—";
+  const d = new Date(str + "T00:00:00");
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
+}
+
 function formatMoney(n) {
   return (Number(n) || 0).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
@@ -1437,7 +1444,12 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
 
       <div className="space-y-2 font-body text-sm">
         <div className="space-y-0.5 text-xs" style={{ color: COLORS.inkSoft }}>
-          <p>Dropped off {formatDate(order.dropOffDate)}</p>
+          <p>Dropped off on {formatDateWithDay(order.dropOffDate)}</p>
+          {showDue && (
+            <p style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
+              Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
+            </p>
+          )}
           {(order.pickupDate || order.completionDate) && (
             <p>
               {order.status === "picked_up" && order.pickupDate
@@ -1580,7 +1592,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 
   const Row = ({ order, muted }) => {
     const s = statusById[order.status] || STATUSES[0];
-    const { isOverdue, showDue } = getOrderTiming(order, rates);
+    const { dueDate, isOverdue, showDue } = getOrderTiming(order, rates);
     return (
       <div className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
         <div>
@@ -1601,12 +1613,15 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             );
           })()}
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+          <div className="font-body text-xs" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
+            <p>Dropped off on {formatDateWithDay(order.dropOffDate)}</p>
+            {showDue && (
+              <p>Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}</p>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <CategoryIcons order={order} />
-          <span className="text-xs font-body" style={{ color: showDue && isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
-            {order.daysOpen}d open{showDue && isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
-          </span>
           <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>{order.frameColor || "White"}</span>
           {order.fullPatioReplacement && order.subcontractorJobNumber && (
             <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>#{order.subcontractorJobNumber}</span>
