@@ -840,7 +840,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           </p>
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Window Screen</label>
-            <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
+            <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -851,7 +851,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             </div>
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame ft</label>
-              <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.5" className={inputCls} style={inputStyle} value={form.frameFeet} onChange={set("frameFeet")} />
+              <input type="number" inputMode="decimal" min="0" step="0.5" className={inputCls} style={inputStyle} value={form.frameFeet} onChange={set("frameFeet")} />
             </div>
           </div>
           {form.frameColor === "Other" && (
@@ -873,11 +873,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}># at custom price</label>
-                  <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreensCustom} onChange={set("numScreensCustom")} />
+                  <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreensCustom} onChange={set("numScreensCustom")} />
                 </div>
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}>Custom screen price</label>
-                  <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.customScreenPrice} onChange={set("customScreenPrice")} placeholder="e.g. 55" />
+                  <input type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.customScreenPrice} onChange={set("customScreenPrice")} placeholder="e.g. 55" />
                 </div>
                 {(form.customScreensExtra || []).map((c, i) => (
                   <div key={i} className="col-span-2 grid grid-cols-2 gap-3 pt-2 border-t" style={{ borderColor: COLORS.line }}>
@@ -894,14 +894,14 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                         </button>
                       </div>
                       <input
-                        type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={c.qty}
+                        type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={c.qty}
                         onChange={(e) => setForm((f) => ({ ...f, customScreensExtra: f.customScreensExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
                       />
                     </div>
                     <div>
                       <label className={labelCls} style={{ color: COLORS.inkSoft }}>Custom screen price</label>
                       <input
-                        type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={c.price} placeholder="e.g. 55"
+                        type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={c.price} placeholder="e.g. 55"
                         onChange={(e) => setForm((f) => ({ ...f, customScreensExtra: f.customScreensExtra.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)) }))}
                       />
                     </div>
@@ -929,11 +929,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
-                    <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.screenHardwareQty} onChange={set("screenHardwareQty")} />
+                    <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.screenHardwareQty} onChange={set("screenHardwareQty")} />
                   </div>
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
-                    <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.screenHardwareUnitPrice} onChange={set("screenHardwareUnitPrice")} placeholder="e.g. 5" />
+                    <input type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.screenHardwareUnitPrice} onChange={set("screenHardwareUnitPrice")} placeholder="e.g. 5" />
                   </div>
                 </div>
                 {(form.screenHardwareExtra || []).map((h, i) => (
@@ -957,14 +957,14 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                       <div>
                         <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
                         <input
-                          type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
+                          type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
                           onChange={(e) => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
                         />
                       </div>
                       <div>
                         <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
                         <input
-                          type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 5"
+                          type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 5"
                           onChange={(e) => setForm((f) => ({ ...f, screenHardwareExtra: f.screenHardwareExtra.map((x, idx) => (idx === i ? { ...x, unitPrice: e.target.value } : x)) }))}
                         />
                       </div>
@@ -992,7 +992,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           </p>
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Patio Door Screen</label>
-            <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.patioDoorCount} onChange={set("patioDoorCount")} />
+            <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.patioDoorCount} onChange={set("patioDoorCount")} />
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, fullPatioReplacement: !f.fullPatioReplacement }))}
@@ -1011,7 +1011,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </div>
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}>Full door price ($300–350 typical)</label>
-                  <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="1" className={inputCls} style={inputStyle} value={form.fullPatioReplacementPrice} onChange={set("fullPatioReplacementPrice")} placeholder="e.g. 325" />
+                  <input type="number" inputMode="decimal" min="0" step="1" className={inputCls} style={inputStyle} value={form.fullPatioReplacementPrice} onChange={set("fullPatioReplacementPrice")} placeholder="e.g. 325" />
                 </div>
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}>Date ordered</label>
@@ -1030,11 +1030,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}># at custom price</label>
-                  <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numPatioCustom} onChange={set("numPatioCustom")} />
+                  <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numPatioCustom} onChange={set("numPatioCustom")} />
                 </div>
                 <div>
                   <label className={labelCls} style={{ color: COLORS.inkSoft }}>Custom patio door price</label>
-                  <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.customPatioPrice} onChange={set("customPatioPrice")} placeholder="e.g. 85" />
+                  <input type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.customPatioPrice} onChange={set("customPatioPrice")} placeholder="e.g. 85" />
                 </div>
               </div>
             )}
@@ -1050,11 +1050,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
-                    <input type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.patioHardwareQty} onChange={set("patioHardwareQty")} />
+                    <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.patioHardwareQty} onChange={set("patioHardwareQty")} />
                   </div>
                   <div>
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
-                    <input type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.patioHardwareUnitPrice} onChange={set("patioHardwareUnitPrice")} placeholder="e.g. 8" />
+                    <input type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={form.patioHardwareUnitPrice} onChange={set("patioHardwareUnitPrice")} placeholder="e.g. 8" />
                   </div>
                 </div>
                 {(form.patioHardwareExtra || []).map((h, i) => (
@@ -1078,14 +1078,14 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                       <div>
                         <label className={labelCls} style={{ color: COLORS.inkSoft }}>Quantity</label>
                         <input
-                          type="number" onWheel={blurOnWheel} inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
+                          type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={h.qty}
                           onChange={(e) => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)) }))}
                         />
                       </div>
                       <div>
                         <label className={labelCls} style={{ color: COLORS.inkSoft }}>Price ($/ea)</label>
                         <input
-                          type="number" onWheel={blurOnWheel} inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 8"
+                          type="number" inputMode="decimal" min="0" step="0.01" className={inputCls} style={inputStyle} value={h.unitPrice} placeholder="e.g. 8"
                           onChange={(e) => setForm((f) => ({ ...f, patioHardwareExtra: f.patioHardwareExtra.map((x, idx) => (idx === i ? { ...x, unitPrice: e.target.value } : x)) }))}
                         />
                       </div>
@@ -5041,13 +5041,21 @@ export default function AppRoot() {
     setCheckingTrust(false);
   }, []);
 
-  // Prevents the browser's default behavior of changing a focused number input's value when
-  // scrolling with a mouse wheel or trackpad — applied once, globally, so every number field
-  // across the whole app is protected without needing to touch each one individually.
+  // Makes scrolling on a focused number field change its value by exactly 1 (a whole number)
+  // per scroll tick, regardless of that field's own `step` attribute (which varies across the
+  // app - 0.01 for prices, 0.5 for footage, etc.) — applied once, globally, so every number
+  // field gets consistent, predictable scroll behavior without needing to touch each one.
   useEffect(() => {
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
     const handleWheel = (e) => {
-      if (document.activeElement && document.activeElement.type === "number") {
+      const el = document.activeElement;
+      if (el && el.tagName === "INPUT" && el.type === "number") {
         e.preventDefault();
+        const current = Number(el.value) || 0;
+        const min = el.min !== "" ? Number(el.min) : -Infinity;
+        const next = Math.max(min, current + (e.deltaY < 0 ? 1 : -1));
+        nativeValueSetter.call(el, next);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
       }
     };
     window.addEventListener("wheel", handleWheel, { passive: false });
