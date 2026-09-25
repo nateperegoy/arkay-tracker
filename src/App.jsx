@@ -2171,6 +2171,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                   </div>
 
                   <div className="font-body text-sm space-y-1 mb-3" style={{ color: COLORS.ink }}>
+                    {isDropoff && sub.dropOffDate && <p>Dropping off {formatDateWithDay(sub.dropOffDate)}</p>}
                     {sub.numScreens > 0 && <p>{sub.numScreens} window screen(s)</p>}
                     {sub.hasOversizedScreens && (
                       <p style={{ color: COLORS.stamp }}>
@@ -4126,6 +4127,7 @@ const emptyRequestForm = {
   fullDoorHeightFraction: "0",
   notes: "",
   // Drop-off flow only — a simplified alternative to the estimate flow's fields above.
+  dropOffDate: todayISO(),
   frameMightNeedReplacement: false,
   hasOversizedScreens: false,
   oversizedScreenCount: "",
@@ -4383,6 +4385,12 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     <label className={labelCls} style={{ color: COLORS.inkSoft }}>Email (optional)</label>
                     <input type="email" className={inputCls} style={inputStyle} value={form.email} onChange={set("email")} placeholder="jane@email.com" />
                   </div>
+                  {form.requestType === "dropoff" && (
+                    <div>
+                      <label className={labelCls} style={{ color: COLORS.inkSoft }}>Date of drop off</label>
+                      <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
+                    </div>
+                  )}
                 </div>
                 {error && <p className="text-sm font-body" style={{ color: COLORS.stamp }}>{error}</p>}
                 <div className="flex gap-3 pt-2">
@@ -5388,7 +5396,7 @@ function InternalTracker() {
     const combinedNotes = [sub.notes, ...dimensionNotes].filter(Boolean).join(" — ");
     const newOrder = {
       id: uid(), createdAt: Date.now(),
-      dropOffDate: todayISO(), completionDate: "", pickupDate: "",
+      dropOffDate: sub.dropOffDate || todayISO(), completionDate: "", pickupDate: "",
       status: "new_order",
       customerName: sub.customerName, phone: sub.phone,
       numScreens: sub.numScreens || 0, numScreensPremium: 0,
