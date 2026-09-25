@@ -1425,8 +1425,13 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {order.isRush && (
-            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.stamp, color: "white" }}>
+            <span className="inline-block mb-1 mr-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.stamp, color: "white" }}>
               ⚡ Rush Order
+            </span>
+          )}
+          {order.fullPatioReplacement && order.subcontractorJobNumber && order.metroStatus !== "picked_up_from_metro" && (
+            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: "#E5EFED", color: "#5B8C82" }}>
+              Metro #{order.subcontractorJobNumber}
             </span>
           )}
           <p className="font-display text-base truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
