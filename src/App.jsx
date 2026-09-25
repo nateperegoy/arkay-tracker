@@ -5283,7 +5283,11 @@ function InternalTracker() {
     persist(orders.map((o) => (o.id === id ? { ...o, status } : o)));
     setPendingStatusChange(null);
   };
-  const changeMetroStatus = (id, metroStatus) => persist(orders.map((o) => (o.id === id ? { ...o, metroStatus } : o)));
+  const changeMetroStatus = (id, metroStatus) => persist(orders.map((o) => {
+    if (o.id !== id) return o;
+    const shouldMoveToWaiting = metroStatus === "ordered" && ["new_order", "in_progress"].includes(o.status);
+    return { ...o, metroStatus, status: shouldMoveToWaiting ? "waiting_parts" : o.status };
+  }));
   const markWaveInvoiced = (id) => persist(orders.map((o) => (o.id === id ? { ...o, addToWave: true } : o)));
   const snoozeOrderFlag = (id, days) => persist(orders.map((o) => (o.id === id ? { ...o, flagSnoozedUntil: addDays(todayISO(), Number(days) || 0) } : o)));
   const toggleReview = (id) => persist(orders.map((o) => (o.id === id ? { ...o, reviewRequestSent: !o.reviewRequestSent } : o)));
