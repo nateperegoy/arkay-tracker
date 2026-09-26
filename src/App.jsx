@@ -279,6 +279,18 @@ function voiceLink(raw) {
   return "https://voice.google.com/";
 }
 
+// Some paste targets (Google Voice's web compose box in particular) collapse a lone "\n"
+// into a space instead of a real line break, so a multi-paragraph message can paste as one
+// run-on paragraph. Swapping to "\r\n" before it hits the clipboard is a well-known fix —
+// it's read the same everywhere "\n" is, but paste handlers that only treat "\r" as a real
+// Enter keystroke get the hard break they're looking for too. Only ever apply this right
+// before writing to the clipboard — the "\n"-only strings are still what's used for the
+// in-app preview (which relies on CSS to render "\n" as a line break) and for anything else
+// that isn't headed for an external paste target.
+function toClipboardText(s) {
+  return (s || "").replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+}
+
 // Copies the phone number first (so it's ready to paste into Google Voice's search/recipient
 // field right away, instead of having to go hunt for it) and opens the app, then swaps the
 // clipboard over to the actual message a few seconds later — timed for about when the number
@@ -289,7 +301,7 @@ function copyNumberThenMessage(phone, message) {
   navigator.clipboard.writeText(formattedNumber).catch(() => {});
   window.open(voiceLink(phone), "_blank", "noopener,noreferrer");
   setTimeout(() => {
-    navigator.clipboard.writeText(message).catch(() => {});
+    navigator.clipboard.writeText(toClipboardText(message)).catch(() => {});
   }, 3500);
 }
 
@@ -1177,7 +1189,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(jobSummaryText).then(() => {
+              navigator.clipboard.writeText(toClipboardText(jobSummaryText)).then(() => {
                 setCopiedSummary(true);
                 setTimeout(() => setCopiedSummary(false), 2000);
               }).catch(() => {});
@@ -1254,7 +1266,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
   const customerText = buildCustomerText();
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(customerText).then(() => {
+    navigator.clipboard.writeText(toClipboardText(customerText)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {});
@@ -3874,7 +3886,7 @@ function QuickLinksPanel({ rates, orders }) {
     if (selectedOrder && selectedOrder.phone) {
       copyNumberThenMessage(selectedOrder.phone, value);
     } else {
-      try { await navigator.clipboard.writeText(value); } catch (e) {}
+      try { await navigator.clipboard.writeText(toClipboardText(value)); } catch (e) {}
     }
   };
 
