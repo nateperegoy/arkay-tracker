@@ -2393,7 +2393,17 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       </span>
                       <div>
                         <p className="font-display text-sm" style={{ color: COLORS.ink }}>{task.description}</p>
-                        {linkedOrder && <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{linkedOrder.customerName}</p>}
+                        {linkedOrder && (
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <p className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{linkedOrder.customerName}</p>
+                              <PhoneLink phone={linkedOrder.phone} className="font-body text-xs underline" />
+                            </div>
+                            <button onClick={() => setViewingOrder(linkedOrder)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
+                              <Eye size={14} color={COLORS.inkSoft} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
