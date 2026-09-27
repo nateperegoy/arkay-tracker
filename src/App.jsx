@@ -316,20 +316,23 @@ function voiceCallLink(raw) {
   return "https://voice.google.com/u/0/calls";
 }
 
-// Tapping a phone number opens this instead of dialing directly — lets Nate pick call or
-// text, both via Google Voice specifically, rather than the device's default phone app.
+// Tapping a phone number just copies it — doesn't navigate anywhere, so it doesn't interrupt
+// whatever Nate's doing. Actually texting/calling from Google Voice is a separate, explicit
+// action (the "Ready for Pick Up" / "Send Guide" / review-request buttons etc.).
 function PhoneLink({ phone, className }) {
+  const [copied, setCopied] = useState(false);
   const display = formatPhone(phone) || "—";
   if (!phone) return <span className={className}>{display}</span>;
   const handleClick = () => {
     const digits = (phone || "").replace(/\D/g, "");
     const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone;
     navigator.clipboard.writeText(formattedNumber).catch(() => {});
-    window.open(voiceLink(phone), "_blank", "noopener,noreferrer");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
   return (
-    <button type="button" onClick={handleClick} className={className} style={{ color: COLORS.slate }}>
-      {display}
+    <button type="button" onClick={handleClick} className={className} style={{ color: copied ? COLORS.sage : COLORS.slate }}>
+      {copied ? "Copied!" : display}
     </button>
   );
 }
