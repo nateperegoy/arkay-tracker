@@ -39,6 +39,7 @@ import {
   Settings,
   Lock,
   Tag,
+  MapPin,
   Unlock,
   MessageCircle,
   Banknote,
@@ -4984,6 +4985,10 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   <div className="rounded-2xl p-4 mt-4 text-left" style={{ background: COLORS.canvasDark }}>
                     <p className="font-display text-xs uppercase tracking-wide mb-2.5" style={{ color: COLORS.ink }}>A few things to know</p>
                     <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <MapPin size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Drop off at {BUSINESS_ADDRESS}.</p>
+                      </div>
                       <div className="flex items-start gap-2.5">
                         <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
                         <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Tape your name to an item.</p>
