@@ -4987,7 +4987,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                     <div className="space-y-2.5">
                       <div className="flex items-start gap-2.5">
                         <MapPin size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
-                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Drop off at {BUSINESS_ADDRESS}. It's the blue house on the corner.</p>
+                        <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Drop off at {BUSINESS_ADDRESS}. It's the blue house on the corner. Leave your items at the front step.</p>
                       </div>
                       <div className="flex items-start gap-2.5">
                         <Tag size={16} color={COLORS.sage} style={{ marginTop: 2, flexShrink: 0 }} />
