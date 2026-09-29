@@ -2048,7 +2048,7 @@ function TimeLogSection({ timeLogs, onSaveLog, orders, workProgress, onSaveWorkP
 // "customer-submissions" key — never directly in the live order list — so an
 // unauthenticated website visitor can't create a real order without review.
 // Drop-offs (something physically waiting at the door) sort above plain estimate requests.
-function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onSnoozeOrderFlag, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onSnoozeTask, onRetryTodoistSync, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
+function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, onDeleteOrder, onOrderStatusChange, onMetroStatusChange, onMarkWaveInvoiced, onSnoozeOrderFlag, onToggleReview, rates, timeLogs, onSaveTimeLog, monthlyExpenses, onSaveExpense, onLookupCustomer, manualTasks, onAddTask, onCompleteTask, onSnoozeTask, workProgress, onSaveWorkProgress, onDeleteWorkProgress }) {
   const [viewingOrder, setViewingOrder] = useState(null);
   const [confirmingDismissId, setConfirmingDismissId] = useState(null);
   const [reviewMenuOrderId, setReviewMenuOrderId] = useState(null);
@@ -2425,37 +2425,6 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         <span className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
                           Due {formatDate(task.dueDate)}{isOverdue ? " — overdue" : ""}
                         </span>
-                        {task.todoistStatus === "pending" && (
-                          Date.now() - (task.createdAt || 0) > 30000 ? (
-                            <button
-                              onClick={() => onRetryTodoistSync(task.id, task.description, task.dueDate)}
-                              className="font-body text-xs underline"
-                              style={{ color: COLORS.stamp }}
-                              title="This got stuck mid-sync — tap to retry"
-                            >
-                              Todoist sync stuck — retry
-                            </button>
-                          ) : (
-                            <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.inkSoft }}>
-                              <Loader2 size={11} className="animate-spin" /> Syncing
-                            </span>
-                          )
-                        )}
-                        {task.todoistStatus === "synced" && (
-                          <span className="font-body text-xs flex items-center gap-1" style={{ color: COLORS.sage }} title="Added to Todoist">
-                            <CheckCircle2 size={12} /> Todoist
-                          </span>
-                        )}
-                        {task.todoistStatus === "failed" && (
-                          <button
-                            onClick={() => onRetryTodoistSync(task.id, task.description, task.dueDate)}
-                            className="font-body text-xs underline"
-                            style={{ color: COLORS.stamp }}
-                            title="Couldn't reach Todoist — tap to retry"
-                          >
-                            Todoist sync failed — retry
-                          </button>
-                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         {task.phone && (
@@ -4345,7 +4314,6 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
             description: `Send measuring guide to ${form.customerName.trim() || "customer"} (${formatPhone(form.phone) || form.phone})`,
             dueDate: todayISO(),
             createdAt: Date.now(),
-            todoistStatus: "skipped",
           };
           await window.storage.set("manual-tasks", JSON.stringify([...existingTasks, newTask]), false);
         } catch (e) {
@@ -5167,8 +5135,6 @@ function InternalTracker() {
   const [timeLogs, setTimeLogs] = useState([]);
   const [monthlyExpenses, setMonthlyExpenses] = useState([]);
   const [manualTasks, setManualTasks] = useState([]);
-  const manualTasksRef = useRef(manualTasks);
-  useEffect(() => { manualTasksRef.current = manualTasks; }, [manualTasks]);
   const [workProgress, setWorkProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
@@ -5375,33 +5341,9 @@ function InternalTracker() {
       setSaveError(true);
     }
   };
-  // Local task always saves first and immediately, regardless of what happens next — Todoist
-  // sync is a best-effort add-on, never a blocker for the tracker's own task list.
-  const syncTaskToTodoist = async (taskId, description, dueDate) => {
-    let resolvedStatus;
-    try {
-      const response = await fetch("/api/todoist-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, dueDate }),
-      });
-      const data = await response.json().catch(() => ({}));
-      resolvedStatus = response.ok && data.success ? "synced" : "failed";
-    } catch (e) {
-      resolvedStatus = "failed";
-    }
-    const next = manualTasksRef.current.map((t) => (t.id === taskId ? { ...t, todoistStatus: resolvedStatus } : t));
-    await persistManualTasks(next);
-  };
   const addManualTask = (orderId, description, dueDate) => {
-    const newTask = { id: uid(), orderId, description, dueDate, createdAt: Date.now(), todoistStatus: "pending" };
+    const newTask = { id: uid(), orderId, description, dueDate, createdAt: Date.now() };
     persistManualTasks([...manualTasks, newTask]);
-    syncTaskToTodoist(newTask.id, description, dueDate);
-  };
-  const retryTodoistSync = async (taskId, description, dueDate) => {
-    const next = manualTasksRef.current.map((t) => (t.id === taskId ? { ...t, todoistStatus: "pending" } : t));
-    await persistManualTasks(next);
-    syncTaskToTodoist(taskId, description, dueDate);
   };
   const completeManualTask = (id) => {
     persistManualTasks(manualTasks.filter((t) => t.id !== id));
@@ -5654,7 +5596,6 @@ function InternalTracker() {
             onAddTask={addManualTask}
             onCompleteTask={completeManualTask}
             onSnoozeTask={snoozeManualTask}
-            onRetryTodoistSync={retryTodoistSync}
             workProgress={workProgress}
             onSaveWorkProgress={saveWorkProgress}
             onDeleteWorkProgress={deleteWorkProgress}
