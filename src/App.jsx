@@ -1596,6 +1596,10 @@ function computeNightlyQueue(active, max, workProgress) {
   const queue = [];
   for (const o of active) {
     if (total >= max) break;
+    // A rush order with a scheduled pickup date doesn't need tonight's attention if that date
+    // is still more than a day out — it joins the queue starting the day before it's due, same
+    // as everything else, instead of jumping the line the moment it's marked rush.
+    if (o.isRush && o.pickupDate && daysBetween(todayISO(), o.pickupDate) > 1) continue;
     const fullUnits = (Number(o.numScreens) || 0) + (Number(o.numScreensCustom) || 0) + (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0);
     const loggedUnits = (workProgress || [])
       .filter((p) => p.orderId === o.id)
