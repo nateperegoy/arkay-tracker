@@ -564,50 +564,50 @@ function buildItemizedLines(order, rates) {
   const premium = Number(order.numScreensPremium) || 0;
   const customScreens = Number(order.numScreensCustom) || 0;
   const customScreenRate = Number(order.customScreenPrice) || 0;
-  if (standard > 0) lines.push(`${standard} standard screen${standard === 1 ? "" : "s"} @ $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
-  if (premium > 0) lines.push(`${premium} screen${premium === 1 ? "" : "s"} @ $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
-  if (customScreens > 0) lines.push(`${customScreens} screen${customScreens === 1 ? "" : "s"} @ $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
+  if (standard > 0) lines.push(`Standard screen ${standard} at $${rates.screen}/screen = $${Math.round(standard * rates.screen)}`);
+  if (premium > 0) lines.push(`Screen ${premium} at $${rates.screenPremium}/screen = $${Math.round(premium * rates.screenPremium)}`);
+  if (customScreens > 0) lines.push(`Screen ${customScreens} at $${customScreenRate}/screen = $${Math.round(customScreens * customScreenRate)}`);
   (order.customScreensExtra || []).forEach((c) => {
     const qty = Number(c.qty) || 0;
     if (qty <= 0) return;
     const price = Number(c.price) || 0;
-    lines.push(`${qty} screen${qty === 1 ? "" : "s"} @ $${price}/screen = $${Math.round(qty * price)}`);
+    lines.push(`Screen ${qty} at $${price}/screen = $${Math.round(qty * price)}`);
   });
 
   const feet = Number(order.frameFeet) || 0;
   if (feet > 0) {
     const frameRate = frameRateFor(order.frameColor, rates);
-    lines.push(`${feet} ft frame @ $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
+    lines.push(`Frame ${feet} ft at $${frameRate}/ft (${order.frameColor || "White"}) = $${Math.round(feet * frameRate)}`);
   }
 
   const mainScreenQty = Number(order.screenHardwareQty) || 0;
   if (mainScreenQty > 0) {
     const unitPrice = Number(order.screenHardwareUnitPrice) || 0;
-    lines.push(`${mainScreenQty} ${(order.screenHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(mainScreenQty * unitPrice)}`);
+    lines.push(`${(order.screenHardwareItem || "").trim() || "Hardware item"} ${mainScreenQty} at $${unitPrice}/ea = $${Math.round(mainScreenQty * unitPrice)}`);
   }
   (order.screenHardwareExtra || []).forEach((h) => {
     const qty = Number(h.qty) || 0;
     if (qty <= 0) return;
     const unitPrice = Number(h.unitPrice) || 0;
-    lines.push(`${qty} ${(h.item || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
+    lines.push(`${(h.item || "").trim() || "Hardware item"} ${qty} at $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
   });
 
   const standardPatio = Number(order.patioDoorCount) || 0;
   const customPatio = Number(order.numPatioCustom) || 0;
   const customPatioRate = Number(order.customPatioPrice) || 0;
-  if (standardPatio > 0) lines.push(`${standardPatio} standard patio door screen${standardPatio === 1 ? "" : "s"} @ $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
-  if (customPatio > 0) lines.push(`${customPatio} patio door screen${customPatio === 1 ? "" : "s"} @ $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
+  if (standardPatio > 0) lines.push(`Patio door screen ${standardPatio} at $${rates.patioDoor}/ea = $${Math.round(standardPatio * rates.patioDoor)}`);
+  if (customPatio > 0) lines.push(`Patio door screen ${customPatio} at $${customPatioRate}/ea = $${Math.round(customPatio * customPatioRate)}`);
 
   const mainPatioQty = Number(order.patioHardwareQty) || 0;
   if (mainPatioQty > 0) {
     const unitPrice = Number(order.patioHardwareUnitPrice) || 0;
-    lines.push(`${mainPatioQty} ${(order.patioHardwareItem || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(mainPatioQty * unitPrice)}`);
+    lines.push(`${(order.patioHardwareItem || "").trim() || "Hardware item"} ${mainPatioQty} at $${unitPrice}/ea = $${Math.round(mainPatioQty * unitPrice)}`);
   }
   (order.patioHardwareExtra || []).forEach((h) => {
     const qty = Number(h.qty) || 0;
     if (qty <= 0) return;
     const unitPrice = Number(h.unitPrice) || 0;
-    lines.push(`${qty} ${(h.item || "").trim() || "hardware item(s)"} @ $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
+    lines.push(`${(h.item || "").trim() || "Hardware item"} ${qty} at $${unitPrice}/ea = $${Math.round(qty * unitPrice)}`);
   });
 
   if (order.fullPatioReplacement) {
