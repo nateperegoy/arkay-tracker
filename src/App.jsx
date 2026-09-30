@@ -616,7 +616,10 @@ function buildItemizedLines(order, rates) {
   }
 
   if (order.isRush && Number(order.rushSurchargePrice) > 0) {
-    lines.push(`Rush order surcharge = $${Math.round(Number(order.rushSurchargePrice))}`);
+    const rushItemCount = totalItemCount(order);
+    const rushTotal = Number(order.rushSurchargePrice);
+    const rushPerItem = rushItemCount > 0 ? rushTotal / rushItemCount : rushTotal;
+    lines.push(`Rush order surcharge ${rushItemCount} at $${Math.round(rushPerItem)}/ea = $${Math.round(rushTotal)}`);
   }
 
   return lines;
