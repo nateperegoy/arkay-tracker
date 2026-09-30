@@ -1621,17 +1621,6 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   const waiting = withDays(orders.filter((o) => o.status === "waiting_parts" && !(o.fullPatioReplacement && o.metroStatus === "ordered"))).sort((a, b) => b.daysOpen - a.daysOpen);
   const { queue, total } = computeNightlyQueue(active, 8, workProgress);
 
-  // Ready orders in the actual order they'll be picked up: a scheduled date comes before no
-  // date at all, and among scheduled ones, the soonest date comes first. Same convention as
-  // the Pick Up tab, so the two never disagree about "next."
-  const readyForPickup = orders
-    .filter((o) => o.status === "ready")
-    .sort((a, b) => {
-      if (!!a.pickupDate !== !!b.pickupDate) return a.pickupDate ? -1 : 1;
-      if (!a.pickupDate) return 0;
-      return a.pickupDate < b.pickupDate ? -1 : a.pickupDate > b.pickupDate ? 1 : 0;
-    });
-
   const CategoryIcons = ({ order }) => (
     <span className="flex items-center gap-1">
       {((order.numScreens || 0) + (order.numScreensCustom || 0)) > 0 && <Layers size={12} color={COLORS.inkSoft} />}
@@ -1694,33 +1683,6 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 
   return (
     <div className="space-y-6">
-      {readyForPickup.length > 0 && (
-        <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-          <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
-            <MapPin size={13} color={COLORS.sage} /> Ready for Pick Up — in order they'll be picked up
-          </p>
-          <div>
-            {readyForPickup.map((order) => (
-              <div key={order.id} className="py-3 border-b space-y-1" style={{ borderColor: COLORS.line }}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
-                    <PhoneLink phone={order.phone} className="font-body text-xs underline" />
-                  </div>
-                  <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
-                    <Eye size={14} color={COLORS.inkSoft} />
-                  </button>
-                </div>
-                <p className="text-xs font-body" style={{ color: order.pickupDate ? COLORS.ink : COLORS.inkSoft }}>
-                  {order.pickupDate ? `Picking up ${formatDate(order.pickupDate)}` : "No pickup date set"}
-                  {order.pickupTimeNote && <span className="ml-2" style={{ color: COLORS.stamp }}>{order.pickupTimeNote}</span>}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {queue.length > 0 && (
         <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
           <div className="flex items-center justify-between mb-1">
@@ -5450,10 +5412,23 @@ function InternalTracker() {
   const grouped = useMemo(() => {
     const g = Object.fromEntries(STATUSES.map((s) => [s.id, []]));
     orders.forEach((o) => { if (g[o.status]) g[o.status].push(o); });
-    Object.values(g).forEach((list) => list.sort((a, b) => {
-      if (!!a.isRush !== !!b.isRush) return a.isRush ? -1 : 1;
-      return a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0;
-    }));
+    Object.entries(g).forEach(([statusId, list]) => {
+      if (statusId === "ready") {
+        // Ready for Pickup is ordered by when it'll actually be picked up, not by rush or
+        // drop-off date — a scheduled pickup comes before no date at all, and among
+        // scheduled ones the soonest comes first. Same convention as the Pick Up tab.
+        list.sort((a, b) => {
+          if (!!a.pickupDate !== !!b.pickupDate) return a.pickupDate ? -1 : 1;
+          if (!a.pickupDate) return 0;
+          return a.pickupDate < b.pickupDate ? -1 : a.pickupDate > b.pickupDate ? 1 : 0;
+        });
+      } else {
+        list.sort((a, b) => {
+          if (!!a.isRush !== !!b.isRush) return a.isRush ? -1 : 1;
+          return a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0;
+        });
+      }
+    });
     return g;
   }, [orders]);
 
