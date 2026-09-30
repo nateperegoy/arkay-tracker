@@ -1180,6 +1180,13 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         </div>
       </div>
 
+      {form.isRush && rushSurcharge > 0 && (
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs font-body" style={{ color: COLORS.inkSoft }}>⚡ Rush order surcharge</span>
+          <span className="font-body text-sm" style={{ color: COLORS.inkSoft }}>{formatMoney(rushSurcharge)}</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-1">
         <span className="text-xs font-display uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>Total</span>
         <span className="font-body font-semibold text-lg" style={{ color: COLORS.ink }}>
