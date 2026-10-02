@@ -2357,7 +2357,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                               <button
                                 onClick={async () => {
                                   const firstName = (order.customerName || "").split(" ")[0] || "";
-                                  const message = `Thanks${firstName ? ` ${firstName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`;
+                                  const message = `Thanks${firstName ? ` ${firstName}` : ""}, that would be great!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks so much — it really helps!\nNate`;
                                   copyNumberThenMessage(order.phone, message);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
@@ -2371,7 +2371,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                               <button
                                 onClick={async () => {
                                   const firstName = (order.customerName || "").split(" ")[0] || "there";
-                                  const message = `Hi ${firstName},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
+                                  const message = `Hi ${firstName},\n\nThanks again for your business! If you have a minute, a quick review on Google or Facebook would really help a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`;
                                   copyNumberThenMessage(order.phone, message);
                                   onToggleReview(order.id);
                                   setReviewMenuOrderId(null);
@@ -3852,12 +3852,12 @@ function QuickLinksPanel({ rates, orders }) {
     {
       key: "sendReviewAgreed",
       label: "Send Review - Already Agreed",
-      value: `Thanks${trimmedName ? ` ${trimmedName}` : ""}, that would be great!\n\nI just celebrated one year in business at the beginning of April, and every review really makes a difference for a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nNate`,
+      value: `Thanks${trimmedName ? ` ${trimmedName}` : ""}, that would be great!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks so much — it really helps!\nNate`,
     },
     {
       key: "requestReview",
       label: "Request Review",
-      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nThanks again for your business — I really appreciate it.\n\nIf you have a couple of minutes, would you be willing to leave a quick review on Google or Facebook? I just celebrated one year in business at the beginning of April, and every review truly makes a difference for a small business like mine.\n\nThanks again — I appreciate your support!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
+      value: `Hi${trimmedName ? ` ${trimmedName}` : " there"},\n\nThanks again for your business! If you have a minute, a quick review on Google or Facebook would really help a small business like mine.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
     },
     {
       key: "requestReviewBelated",
