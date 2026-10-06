@@ -3862,7 +3862,7 @@ function QuickLinksPanel({ rates, orders }) {
     {
       key: "requestReviewBelated",
       label: "Belated Request (a few weeks later)",
-      value: `Hi${trimmedName ? ` ${trimmedName}` : ""},\n\nI know it's been a couple weeks since you picked up your screens. I just want to say once more, "Thanks for your business!" If you have a couple minutes to spare, a review on Google or Facebook would go a long way to help me grow my new screen business. I appreciate it!\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
+      value: `Hi${trimmedName ? ` ${trimmedName}` : ""},\n\nThanks again for your business! If you have a couple minutes, a review on Google or Facebook would go a long way for my new screen business.\n\nGoogle: ${GOOGLE_REVIEW_LINK}\nFacebook: ${FACEBOOK_REVIEW_LINK}\n\nThanks!\nNate`,
     },
   ];
 
