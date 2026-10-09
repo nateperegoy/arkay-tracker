@@ -2702,15 +2702,18 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
 /* ---------------------------------- COMPLETE PANEL ---------------------------------- */
 function CompletePanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookupCustomer }) {
   const [viewingOrder, setViewingOrder] = useState(null);
+  // Sorted and grouped by pickup date; falls back to drop-off date for any closed order
+  // that never had a pickup date recorded.
+  const doneDate = (o) => o.pickupDate || o.dropOffDate;
   const completed = orders
     .filter((o) => o.status === "closed")
-    .sort((a, b) => (a.dropOffDate < b.dropOffDate ? 1 : a.dropOffDate > b.dropOffDate ? -1 : 0));
+    .sort((a, b) => (doneDate(a) < doneDate(b) ? 1 : doneDate(a) > doneDate(b) ? -1 : 0));
 
   // Group by month for a growing list that stays easy to scan, same pattern as the
   // Financials tab's monthly breakdown.
   const groups = [];
   completed.forEach((o) => {
-    const d = new Date(o.dropOffDate + "T00:00:00");
+    const d = new Date(doneDate(o) + "T00:00:00");
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     let group = groups.find((g) => g.key === key);
     if (!group) {
@@ -2766,7 +2769,7 @@ function CompletePanel({ orders, onEdit, onDelete, onStatusChange, rates, onLook
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>Dropped off {formatDate(order.dropOffDate)}</span>
+                        <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{order.pickupDate ? `Picked up ${formatDate(order.pickupDate)}` : `Dropped off ${formatDate(order.dropOffDate)}`}</span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-body text-sm font-semibold" style={{ color: COLORS.ink }}>{formatMoney(total)}</span>
                           <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
