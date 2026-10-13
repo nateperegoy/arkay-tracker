@@ -1767,7 +1767,9 @@ function WorkProgressSection({ orders, workProgress, onSaveWorkProgress, onDelet
   const [patioInput, setPatioInput] = useState("");
 
   const activeOrders = orders
-    .filter((o) => o.status !== "closed" && o.status !== "picked_up")
+    // Picked-up orders stay selectable until they're closed, since work can still be logged
+    // against them (e.g. finishing the last items after a partial pickup, or catching up on logging).
+    .filter((o) => o.status !== "closed")
     .slice()
     .sort((a, b) => (a.customerName || "").localeCompare(b.customerName || ""));
 
