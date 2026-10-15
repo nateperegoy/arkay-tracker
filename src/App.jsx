@@ -592,7 +592,7 @@ function buildItemizedLines(order, rates) {
   const customScreens = Number(order.numScreensCustom) || 0;
   const customScreenRate = Number(order.customScreenPrice) || 0;
   if (standard > 0) lines.push(invoiceLine("Window screen (standard)", standard, rates.screen));
-  if (oversized > 0) lines.push(invoiceLine("Window screen (oversized)", oversized, rates.screenPremium));
+  if (oversized > 0) lines.push(invoiceLine(`Window screen (large, over ${LARGE_SCREEN_MIN_WIDTH}")`, oversized, rates.screenPremium));
   if (customScreens > 0) lines.push(invoiceLine("Window screen (custom size)", customScreens, customScreenRate));
   (order.customScreensExtra || []).forEach((c) => {
     const qty = Number(c.qty) || 0;
@@ -713,7 +713,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
     const hardware = screenHardwareTotal(form);
     const parts = [];
     if (standard > 0) parts.push(`${standard} standard window screens x $${rates.screen}/ea`);
-    if (premium > 0) parts.push(`${premium} x $${rates.screenPremium}/ea`);
+    if (premium > 0) parts.push(`${premium} large screens (over ${LARGE_SCREEN_MIN_WIDTH}") x $${rates.screenPremium}/ea`);
     if (custom > 0) parts.push(`${custom} x $${customRate}/ea (custom)`);
     const screenTotal = autoScreenPrice(form, rates);
     const frameTotal = frameCostFor(form, rates);
@@ -900,6 +900,13 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Window Screen</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
+          </div>
+          <div>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Large Window Screen (over {LARGE_SCREEN_MIN_WIDTH}" wide)</label>
+            <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreensPremium} onChange={set("numScreensPremium")} />
+            {Number(form.numScreensPremium) > 0 && (
+              <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>Large screens are ${rates.screenPremium} each.</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1354,13 +1361,13 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
           {order.pickupTimeNote && row("Pickup time", order.pickupTimeNote)}
         </div>
 
-        {(order.numScreens > 0 || order.numScreensCustom > 0 || Number(order.frameFeet) > 0 || order.patioDoorCount > 0 || order.numPatioCustom > 0 || order.fullPatioReplacement || Number(order.screenHardwarePrice) > 0 || Number(order.patioHardwarePrice) > 0) && (
+        {(order.numScreens > 0 || order.numScreensPremium > 0 || order.numScreensCustom > 0 || Number(order.frameFeet) > 0 || order.patioDoorCount > 0 || order.numPatioCustom > 0 || order.fullPatioReplacement || Number(order.screenHardwarePrice) > 0 || Number(order.patioHardwarePrice) > 0) && (
           <div className="rounded-xl p-3" style={{ background: COLORS.canvasDark }}>
             <p className="font-display text-xs uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Job Info</p>
-            {(order.numScreens > 0 || order.numScreensCustom > 0 || Number(order.frameFeet) > 0) && (
+            {(order.numScreens > 0 || order.numScreensPremium > 0 || order.numScreensCustom > 0 || Number(order.frameFeet) > 0) && (
               <>
                 {row("Screens", order.numScreens || 0)}
-                {order.numScreensPremium > 0 && row(`At $${rates.screenPremium}`, order.numScreensPremium)}
+                {order.numScreensPremium > 0 && row(`Large screens (over ${LARGE_SCREEN_MIN_WIDTH}")`, `${order.numScreensPremium} @ $${rates.screenPremium}/ea`)}
                 {order.numScreensCustom > 0 && row(`At custom price`, `${order.numScreensCustom} @ $${order.customScreenPrice}/ea`)}
                 {(order.customScreensExtra || []).map((c, i) => (
                   Number(c.qty) > 0 && <React.Fragment key={i}>{row(`At custom price`, `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
@@ -1531,7 +1538,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             <Layers size={13} color={COLORS.inkSoft} />
             <span>
               {order.numScreens > 0
-                ? `${order.numScreens} screen${order.numScreens === 1 ? "" : "s"}${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} @ $${rates.screenPremium})` : ""}${totalCustomScreens > 0 ? ` (+${totalCustomScreens} custom)` : ""}`
+                ? `${order.numScreens} screen${order.numScreens === 1 ? "" : "s"}${order.numScreensPremium > 0 ? ` (${order.numScreensPremium} large @ $${rates.screenPremium})` : ""}${totalCustomScreens > 0 ? ` (+${totalCustomScreens} custom)` : ""}`
                 : `${totalCustomScreens} custom screen${totalCustomScreens === 1 ? "" : "s"}`}
               {order.frameFeet > 0 ? ` · ${order.frameFeet} ft ${order.frameColor || "White"} frame` : ""}
             </span>
@@ -3658,7 +3665,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
               ) : (
                 <div className="grid grid-cols-3 gap-3">
                   <StatCard label="Standard" value={jobStats.screenMix.standard} />
-                  <StatCard label="Premium" value={jobStats.screenMix.premium} />
+                  <StatCard label="Large" value={jobStats.screenMix.premium} />
                   <StatCard label="Custom" value={jobStats.screenMix.custom} />
                 </div>
               )}
@@ -5596,12 +5603,13 @@ function InternalTracker() {
       dropOffDate: sub.dropOffDate || todayISO(), completionDate: "", pickupDate: "",
       status: "new_order",
       customerName: sub.customerName, phone: sub.phone,
-      numScreens: sub.numScreens || 0, numScreensPremium: 0,
+      numScreens: sub.numScreens || 0,
+      numScreensPremium: sub.hasOversizedScreens ? Number(sub.oversizedScreenCount) || 0 : 0,
       frameFeet: sub.frameFeet || 0,
       frameColor: FRAME_COLORS.includes(sub.frameColor) ? sub.frameColor : (sub.frameColor || "White"),
       frameColorOther: FRAME_COLORS.includes(sub.frameColor) ? "" : (sub.frameColor || ""),
       frameThickness: sub.frameThickness || "None",
-      screenPrice: (sub.numScreens || 0) * rates.screen + (sub.frameFeet || 0) * frameRateFor(sub.frameColor, rates),
+      screenPrice: (sub.numScreens || 0) * rates.screen + (sub.hasOversizedScreens ? Number(sub.oversizedScreenCount) || 0 : 0) * rates.screenPremium + (sub.frameFeet || 0) * frameRateFor(sub.frameColor, rates),
       patioDoorCount: sub.patioScreenCount || 0, patioDoorPrice: (sub.patioScreenCount || 0) * rates.patioDoor,
       fullPatioReplacement: !!sub.fullDoorReplacement, fullPatioReplacementPrice: 0,
       metroStatus: "need_to_order", subcontractorOrderedDate: "", subcontractorJobNumber: "",
