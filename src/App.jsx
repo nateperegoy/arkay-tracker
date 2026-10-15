@@ -46,6 +46,7 @@ import {
   ListChecks,
   PackageCheck,
   Inbox,
+  CalendarDays,
 } from "lucide-react";
 
 /* ---------------------------------- BRAND ASSETS ---------------------------------- */
@@ -2882,7 +2883,13 @@ function computeTrend(type, orders, ctx) {
   const rev = (o) => (Number(o.screenPrice) || 0) + (Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0) + (Number(o.rushSurchargePrice) || 0);
 
   let buckets, getBucketIndex;
-  if (type === "monthly") {
+  if (type === "daily") {
+    // Seven-day window ending on the selected day, so a single day still has context.
+    const [y, m, d] = ctx.day.split("-").map(Number);
+    const days = Array.from({ length: 7 }, (_, i) => new Date(y, m - 1, d - (6 - i)));
+    buckets = days.map((dt) => ({ label: dt.toLocaleDateString("en-US", { weekday: "short", day: "numeric" }), revenue: 0, orders: 0 }));
+    getBucketIndex = (dt) => days.findIndex((x) => x.getFullYear() === dt.getFullYear() && x.getMonth() === dt.getMonth() && x.getDate() === dt.getDate());
+  } else if (type === "monthly") {
     const { year, month } = ctx;
     const daysInMonth = new Date(year, month, 0).getDate();
     const weeks = Math.ceil(daysInMonth / 7);
@@ -2999,10 +3006,102 @@ function buildMonthlyFinancials(orders, monthlyExpenses) {
   return [...map.values()].sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month));
 }
 
+// Calendar popup for the Reports tab: pick any past day (or today) to view its metrics.
+// A dot marks days that have hours or progress logged, so it's easy to see which days have data.
+function ReportDayPickerModal({ value, onSelect, onClose, timeLogs, workProgress }) {
+  const today = todayISO();
+  const [viewMonth, setViewMonth] = useState(() => {
+    const d = new Date((value || today) + "T00:00:00");
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const hoursByDate = {};
+  (timeLogs || []).forEach((l) => { if (Number(l.hours) > 0) hoursByDate[l.date] = true; });
+  (workProgress || []).forEach((p) => { hoursByDate[p.date] = true; });
+
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthLabel = viewMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  }
+
+  return (
+    <Modal title="Pick a day" onClose={onClose}>
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={() => setViewMonth(new Date(year, month - 1, 1))} aria-label="Previous month">
+          <ChevronLeft size={18} color={COLORS.inkSoft} />
+        </button>
+        <p className="font-display text-sm uppercase tracking-wide" style={{ color: COLORS.ink }}>{monthLabel}</p>
+        <button onClick={() => setViewMonth(new Date(year, month + 1, 1))} aria-label="Next month">
+          <ChevronRight size={18} color={COLORS.inkSoft} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+          <div key={i} className="text-center font-display text-xs uppercase" style={{ color: COLORS.inkSoft }}>{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((dateStr, i) => {
+          if (!dateStr) return <div key={`blank-${i}`} />;
+          const isToday = dateStr === today;
+          const isFuture = dateStr > today;
+          const isSelected = dateStr === value;
+          const hasData = !!hoursByDate[dateStr];
+          return (
+            <button
+              key={dateStr}
+              onClick={() => { onSelect(dateStr); onClose(); }}
+              disabled={isFuture}
+              className="aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5"
+              style={{
+                background: isSelected ? COLORS.slate : isToday ? COLORS.skySoft : COLORS.white,
+                border: `1px solid ${isToday && !isSelected ? COLORS.slate : COLORS.line}`,
+                opacity: isFuture ? 0.35 : 1,
+              }}
+            >
+              <span className="font-body text-sm" style={{ color: isSelected ? COLORS.white : COLORS.ink }}>{Number(dateStr.slice(-2))}</span>
+              {!isFuture && (
+                <span className="rounded-full" style={{ width: 5, height: 5, background: hasData ? COLORS.sage : "transparent" }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <span className="flex items-center gap-1.5 font-body text-xs" style={{ color: COLORS.inkSoft }}>
+          <span className="rounded-full inline-block" style={{ width: 6, height: 6, background: COLORS.sage }} /> Has hours or progress logged
+        </span>
+        <button onClick={() => { onSelect(today); onClose(); }} className="font-display text-xs uppercase tracking-wide underline" style={{ color: COLORS.slate }}>
+          Today
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }) {
   const now = new Date();
   const [reportTab, setReportTab] = useState("overview");
   const [type, setType] = useState("monthly");
+  const [day, setDay] = useState(todayISO());
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
+
+  // Step the selected day back/forward by one, never past today.
+  const shiftDay = (delta) => {
+    const [y, m, d] = day.split("-").map(Number);
+    const next = new Date(y, m - 1, d + delta);
+    const iso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+    if (iso <= todayISO()) setDay(iso);
+  };
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [quarter, setQuarter] = useState(Math.floor(now.getMonth() / 3) + 1);
@@ -3014,6 +3113,10 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
   }, [orders]);
 
   const range = useMemo(() => {
+    if (type === "daily") {
+      const [y, m, d] = day.split("-").map(Number);
+      return { start: new Date(y, m - 1, d), end: new Date(y, m - 1, d, 23, 59, 59) };
+    }
     if (type === "monthly") {
       return { start: new Date(year, month - 1, 1), end: new Date(year, month, 0, 23, 59, 59) };
     }
@@ -3022,7 +3125,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
       return { start: new Date(year, sm, 1), end: new Date(year, sm + 3, 0, 23, 59, 59) };
     }
     return { start: new Date(year, 0, 1), end: new Date(year, 11, 31, 23, 59, 59) };
-  }, [type, year, month, quarter]);
+  }, [type, day, year, month, quarter]);
 
   const filteredByCompletion = useMemo(
     () =>
@@ -3069,7 +3172,7 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
     return { totalOrders, totalScreens, totalFeet, totalPatio, revenue, statusCounts, avgTurnaround, paymentCounts, unpaidCount };
   }, [filteredByCompletion, filteredByPickup]);
 
-  const trend = useMemo(() => computeTrend(type, orders, { year, month, quarter }), [type, orders, year, month, quarter]);
+  const trend = useMemo(() => computeTrend(type, orders, { year, month, quarter, day }), [type, orders, day, year, month, quarter]);
 
   // Time tab: hours logged within the same period, linked to the same period's revenue.
   const timeStats = useMemo(() => {
@@ -3147,11 +3250,12 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
     const totalDaysInPeriod = effectiveStart > range.end ? 0 : calendarDaysInRange(effectiveStart, range.end);
     const weeksInPeriod = totalDaysInPeriod / 7;
     const minutesPerScreen = screensCompleted > 0 ? (timeStats.totalHours * 60) / screensCompleted : null;
-    const screensPerWeek = weeksInPeriod > 0 ? screensCompleted / weeksInPeriod : null;
-    const patioPerWeek = weeksInPeriod > 0 ? patioCompleted / weeksInPeriod : null;
+    // Per-week figures would just be one day multiplied by 7, so skip them for a single day.
+    const screensPerWeek = type !== "daily" && weeksInPeriod > 0 ? screensCompleted / weeksInPeriod : null;
+    const patioPerWeek = type !== "daily" && weeksInPeriod > 0 ? patioCompleted / weeksInPeriod : null;
     const screensPerHour = timeStats.totalHours > 0 ? screensCompleted / timeStats.totalHours : null;
     return { screensCompleted, patioCompleted, minutesPerScreen, screensPerWeek, patioPerWeek, screensPerHour };
-  }, [workProgress, range, timeStats.totalHours]);
+  }, [workProgress, range, type, timeStats.totalHours]);
 
   // Jobs tab: work-volume averages for the period.
   const jobStats = useMemo(() => {
@@ -3338,7 +3442,14 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
 
       {reportTab !== "expenses" && (
         <div className="flex flex-wrap items-center gap-2">
-          {["monthly", "quarterly", "annual"].map((t) => (
+          <button
+            onClick={() => { setType("daily"); setDay(todayISO()); }}
+            className={tabCls(type === "daily" && day === todayISO())}
+            style={{ background: type === "daily" && day === todayISO() ? COLORS.sage : COLORS.white, border: `1px solid ${COLORS.line}`, color: type === "daily" && day === todayISO() ? "white" : COLORS.inkSoft }}
+          >
+            today
+          </button>
+          {["daily", "monthly", "quarterly", "annual"].map((t) => (
             <button
               key={t}
               onClick={() => setType(t)}
@@ -3350,6 +3461,24 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
           ))}
 
           <div className="ml-auto flex gap-2">
+            {type === "daily" && (
+              <div className="flex items-center gap-1">
+                <button onClick={() => shiftDay(-1)} aria-label="Previous day" className="p-1">
+                  <ChevronLeft size={16} color={COLORS.inkSoft} />
+                </button>
+                <button
+                  onClick={() => setDayPickerOpen(true)}
+                  className="rounded-md border px-2 py-1 text-sm font-mono bg-white flex items-center gap-1.5"
+                  style={{ borderColor: COLORS.line, color: COLORS.ink }}
+                >
+                  <CalendarDays size={14} color={COLORS.inkSoft} />
+                  {day === todayISO() ? "Today" : formatDate(day)}
+                </button>
+                <button onClick={() => shiftDay(1)} disabled={day >= todayISO()} aria-label="Next day" className="p-1" style={{ opacity: day >= todayISO() ? 0.35 : 1 }}>
+                  <ChevronRight size={16} color={COLORS.inkSoft} />
+                </button>
+              </div>
+            )}
             {type === "monthly" && (
               <input
                 type="month"
@@ -3376,6 +3505,16 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
             )}
           </div>
         </div>
+      )}
+
+      {dayPickerOpen && (
+        <ReportDayPickerModal
+          value={day}
+          onSelect={(d) => { setType("daily"); setDay(d); }}
+          onClose={() => setDayPickerOpen(false)}
+          timeLogs={timeLogs}
+          workProgress={workProgress}
+        />
       )}
 
       {overdueCount > 0 && (
@@ -3571,6 +3710,45 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
 
       {reportTab === "time" && (
         <div className="space-y-4">
+          {type === "daily" && (() => {
+            const entries = (workProgress || []).filter((p) => p.date === day);
+            const byOrder = new Map();
+            entries.forEach((p) => {
+              const cur = byOrder.get(p.orderId) || { screens: 0, patio: 0 };
+              cur.screens += Number(p.screensCompleted) || 0;
+              cur.patio += Number(p.patioCompleted) || 0;
+              byOrder.set(p.orderId, cur);
+            });
+            const rows = [...byOrder.entries()].map(([orderId, v]) => ({ orderId, ...v, name: orders.find((o) => o.id === orderId)?.customerName || "Order no longer exists" }));
+            const hasHours = timeStats.totalHours > 0;
+            return (
+              <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+                <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>
+                  {day === todayISO() ? "Today" : formatDateWithDay(day)} — what got done
+                </p>
+                {rows.length === 0 ? (
+                  <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Nothing logged in Save My Work for this day yet.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {rows.map((r) => (
+                      <div key={r.orderId} className="flex items-center justify-between font-body text-sm">
+                        <span style={{ color: COLORS.ink }}>{r.name}</span>
+                        <span className="font-mono text-xs" style={{ color: COLORS.inkSoft }}>
+                          {[r.screens > 0 ? `${r.screens} screen${r.screens === 1 ? "" : "s"}` : "", r.patio > 0 ? `${r.patio} patio door${r.patio === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {rows.length > 0 && !hasHours && (
+                  <p className="text-xs font-body italic mt-3" style={{ color: COLORS.inkSoft }}>
+                    No hours logged for this day yet, so minutes per screen and screens per hour can't be calculated. Log your hours in Save My Work to fill those in.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCard label="Hours logged" value={timeStats.totalHours.toFixed(1)} />
             <StatCard label="Days worked" value={`${timeStats.daysWorked} of ${timeStats.totalDaysInPeriod}`} />
