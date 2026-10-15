@@ -434,6 +434,8 @@ function tagForActionReason(reason) {
 
 // Screens wider than this are flagged "LARGE SCREEN" in the order details.
 const LARGE_SCREEN_MIN_WIDTH = 35;
+// A screen is "large" (large-screen rate) when it is bigger than 35" x 35", i.e. either side is over 35".
+const LARGE_SCREEN_LABEL = `over ${LARGE_SCREEN_MIN_WIDTH}" x ${LARGE_SCREEN_MIN_WIDTH}"`;
 
 // Whole inches plus a fraction string like "1/2" or "0" -> a number (e.g. 35, "1/2" -> 35.5).
 function inchesFromParts(whole, fraction) {
@@ -592,7 +594,7 @@ function buildItemizedLines(order, rates) {
   const customScreens = Number(order.numScreensCustom) || 0;
   const customScreenRate = Number(order.customScreenPrice) || 0;
   if (standard > 0) lines.push(invoiceLine("Window screen (standard)", standard, rates.screen));
-  if (oversized > 0) lines.push(invoiceLine(`Window screen (large, over ${LARGE_SCREEN_MIN_WIDTH}")`, oversized, rates.screenPremium));
+  if (oversized > 0) lines.push(invoiceLine(`Window screen (large, ${LARGE_SCREEN_LABEL})`, oversized, rates.screenPremium));
   if (customScreens > 0) lines.push(invoiceLine("Window screen (custom size)", customScreens, customScreenRate));
   (order.customScreensExtra || []).forEach((c) => {
     const qty = Number(c.qty) || 0;
@@ -713,7 +715,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
     const hardware = screenHardwareTotal(form);
     const parts = [];
     if (standard > 0) parts.push(`${standard} standard window screens x $${rates.screen}/ea`);
-    if (premium > 0) parts.push(`${premium} large screens (over ${LARGE_SCREEN_MIN_WIDTH}") x $${rates.screenPremium}/ea`);
+    if (premium > 0) parts.push(`${premium} large screens (${LARGE_SCREEN_LABEL}) x $${rates.screenPremium}/ea`);
     if (custom > 0) parts.push(`${custom} x $${customRate}/ea (custom)`);
     const screenTotal = autoScreenPrice(form, rates);
     const frameTotal = frameCostFor(form, rates);
@@ -902,7 +904,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
           </div>
           <div>
-            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Large Window Screen (over {LARGE_SCREEN_MIN_WIDTH}" wide)</label>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Large Window Screen ({LARGE_SCREEN_LABEL})</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreensPremium} onChange={set("numScreensPremium")} />
             {Number(form.numScreensPremium) > 0 && (
               <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>Large screens are ${rates.screenPremium} each.</p>
@@ -1367,7 +1369,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
             {(order.numScreens > 0 || order.numScreensPremium > 0 || order.numScreensCustom > 0 || Number(order.frameFeet) > 0) && (
               <>
                 {row("Screens", order.numScreens || 0)}
-                {order.numScreensPremium > 0 && row(`Large screens (over ${LARGE_SCREEN_MIN_WIDTH}")`, `${order.numScreensPremium} @ $${rates.screenPremium}/ea`)}
+                {order.numScreensPremium > 0 && row(`Large screens (${LARGE_SCREEN_LABEL})`, `${order.numScreensPremium} @ $${rates.screenPremium}/ea`)}
                 {order.numScreensCustom > 0 && row(`At custom price`, `${order.numScreensCustom} @ $${order.customScreenPrice}/ea`)}
                 {(order.customScreensExtra || []).map((c, i) => (
                   Number(c.qty) > 0 && <React.Fragment key={i}>{row(`At custom price`, `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
@@ -5592,7 +5594,7 @@ function InternalTracker() {
         const w = `${s.widthWhole || 0}${s.widthFraction && s.widthFraction !== "0" ? ` ${s.widthFraction}` : ""}"`;
         const h = `${s.heightWhole || 0}${s.heightFraction && s.heightFraction !== "0" ? ` ${s.heightFraction}` : ""}"`;
         const color = s.frameColor === "Other" ? (s.frameColorOther || "Other") : s.frameColor;
-        const isLarge = inchesFromParts(s.widthWhole, s.widthFraction) > LARGE_SCREEN_MIN_WIDTH;
+        const isLarge = inchesFromParts(s.widthWhole, s.widthFraction) > LARGE_SCREEN_MIN_WIDTH || inchesFromParts(s.heightWhole, s.heightFraction) > LARGE_SCREEN_MIN_WIDTH;
         dimensionNotes.push(`${isLarge ? "LARGE SCREEN — " : ""}Custom screen: ${s.howMany || 0}× ${w}×${h}${s.frameThickness ? `, ${s.frameThickness}` : ""}${color ? `, ${color}` : ""}`);
       });
     }
