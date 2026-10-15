@@ -5688,8 +5688,8 @@ function InternalTracker() {
         <div className="max-w-6xl mx-auto px-4 flex flex-wrap gap-1.5 pb-2">
           {[
             { id: "requests", label: "Inbox", icon: Inbox, badge: loading ? 0 : (getMissingTimeLogDays(timeLogs).length > 0 ? 1 : 0) + getMissingExpenseMonths(monthlyExpenses).length + submissions.length + orders.filter((o) => o.status === "picked_up").length + orders.filter((o) => o.status !== "closed" && o.status !== "new_order" && o.status !== "picked_up" && getMissingDetails(o).length > 0).length + orders.filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0).length + manualTasks.length },
-            { id: "dashboard", label: "Jobs", icon: ListChecks },
             { id: "board", label: "Dashboard", icon: Gauge },
+            { id: "dashboard", label: "Jobs", icon: ListChecks },
             { id: "pickup", label: "Ready", icon: PackageCheck, badge: orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO()).length },
           ].map((t) => (
             <button
