@@ -432,6 +432,19 @@ function tagForActionReason(reason) {
   return TASK_TAGS.missingInfo;
 }
 
+// Screens wider than this are flagged "LARGE SCREEN" in the order details.
+const LARGE_SCREEN_MIN_WIDTH = 35;
+
+// Whole inches plus a fraction string like "1/2" or "0" -> a number (e.g. 35, "1/2" -> 35.5).
+function inchesFromParts(whole, fraction) {
+  let n = parseFloat(whole) || 0;
+  if (fraction && fraction !== "0") {
+    const [a, b] = String(fraction).split("/").map(Number);
+    if (a && b) n += a / b;
+  }
+  return n;
+}
+
 // A custom (non-standard) screen size or a whole door replacement both mean real
 // measurements matter here, not a routine standard-size job — worth a second look
 // before treating the import like any other request.
@@ -5562,14 +5575,18 @@ function InternalTracker() {
       dimensionNotes.push(`Whole door outside dims: ${w}×${h}`);
     }
     if (sub.hasOversizedScreens) {
-      dimensionNotes.push(`Oversized screens: ${sub.oversizedScreenCount || "some"}${sub.oversizedScreenWidth ? ` at ${sub.oversizedScreenWidth}" wide` : ""}`);
+      dimensionNotes.push(`LARGE SCREEN: ${sub.oversizedScreenCount || "some"}${sub.oversizedScreenWidth ? ` at ${sub.oversizedScreenWidth}" wide` : ` over ${LARGE_SCREEN_MIN_WIDTH}" wide`}`);
+    }
+    if (sub.hasOversizedPatioScreens || (sub.patioScreenCount > 0 && Number(sub.patioScreenWidth) > LARGE_SCREEN_MIN_WIDTH)) {
+      dimensionNotes.push(`LARGE SCREEN (patio): ${sub.oversizedPatioScreenCount || "some"} over ${LARGE_SCREEN_MIN_WIDTH}" wide`);
     }
     if (sub.needsCustomScreens && sub.customScreenSets && sub.customScreenSets.length > 0) {
       sub.customScreenSets.forEach((s) => {
         const w = `${s.widthWhole || 0}${s.widthFraction && s.widthFraction !== "0" ? ` ${s.widthFraction}` : ""}"`;
         const h = `${s.heightWhole || 0}${s.heightFraction && s.heightFraction !== "0" ? ` ${s.heightFraction}` : ""}"`;
         const color = s.frameColor === "Other" ? (s.frameColorOther || "Other") : s.frameColor;
-        dimensionNotes.push(`Custom screen: ${s.howMany || 0}× ${w}×${h}${s.frameThickness ? `, ${s.frameThickness}` : ""}${color ? `, ${color}` : ""}`);
+        const isLarge = inchesFromParts(s.widthWhole, s.widthFraction) > LARGE_SCREEN_MIN_WIDTH;
+        dimensionNotes.push(`${isLarge ? "LARGE SCREEN — " : ""}Custom screen: ${s.howMany || 0}× ${w}×${h}${s.frameThickness ? `, ${s.frameThickness}` : ""}${color ? `, ${color}` : ""}`);
       });
     }
     if (sub.needsMeasuringGuide) dimensionNotes.push("Requested a measuring guide");
