@@ -1497,7 +1497,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             </span>
           )}
           {order.fullPatioReplacement && order.subcontractorJobNumber && order.metroStatus !== "picked_up_from_metro" && (
-            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: "#E5EFED", color: "#5B8C82" }}>
+            <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: HUES.orange.soft, color: HUES.orange.color }}>
               Metro #{order.subcontractorJobNumber}
             </span>
           )}
@@ -1766,7 +1766,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 
       <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
         <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
-          <Layers size={13} color="#8B4A3D" /> Jobs in Queue - In order of priority
+          <Layers size={13} color={HUES.purple.color} /> Jobs in Queue - In order of priority
         </p>
         {inProgress.length === 0 ? (
           <p className="text-sm font-body py-6 text-center" style={{ color: COLORS.inkSoft }}>Nothing in progress right now.</p>
@@ -1778,7 +1778,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       {waitingOnMetro.length > 0 && (
         <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
           <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
-            <DoorOpen size={13} color="#C17817" /> Waiting on Metro Screenworks
+            <DoorOpen size={13} color={HUES.orange.color} /> Waiting on Metro Screenworks
           </p>
           <div>{waitingOnMetro.map((o) => <Row key={o.id} order={o} />)}</div>
         </div>
@@ -1787,7 +1787,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       {waiting.length > 0 && (
         <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
           <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
-            <Clock size={13} color="#C17817" /> Waiting on parts (not prioritized)
+            <Clock size={13} color={HUES.orange.color} /> Waiting on parts (not prioritized)
           </p>
           <div>{waiting.map((o) => <Row key={o.id} order={o} muted />)}</div>
         </div>
