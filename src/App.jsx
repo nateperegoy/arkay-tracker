@@ -75,13 +75,29 @@ const COLORS = {
   white: "#FFFFFF",
 };
 
+// One shared set of distinct hues for every color-coded chip (order statuses, Metro statuses and
+// task tags), so no two items in the same list look alike. Each "color" is dark enough to read as
+// text on its own "soft" tint (4.5:1 contrast or better).
+const HUES = {
+  blue:   { color: "#2B65A8", soft: "#E6EDF5" },
+  orange: { color: "#B04C00", soft: "#F6EAE0" },
+  gold:   { color: "#7F5E00", soft: "#F0ECE0" },
+  red:    { color: "#BF3A33", soft: "#F7E7E7" },
+  navy:   { color: "#182848", soft: "#E3E9ED" },
+  purple: { color: "#7B3FA0", soft: "#EFE8F4" },
+  pink:   { color: "#B8336E", soft: "#F6E7EE" },
+  green:  { color: "#287538", soft: "#E5EEE7" },
+  teal:   { color: "#106F73", soft: "#E2EEEE" },
+  gray:   { color: "#5E6B78", soft: "#ECEDEF" },
+};
+
 const STATUSES = [
-  { id: "new_order", label: "New Order", color: "#3E7CA6", soft: "#E4EEF5" },
-  { id: "in_progress", label: "In Progress", color: "#8B4A3D", soft: "#F5E7E3" },
-  { id: "waiting_parts", label: "Waiting on Parts", color: "#C17817", soft: "#FBF0DF" },
-  { id: "ready", label: "Ready for Pickup", color: "#5B8C82", soft: "#E5EFED" },
-  { id: "picked_up", label: "Picked Up", color: "#7C8896", soft: "#EBEEF1" },
-  { id: "closed", label: "Closed", color: "#8A8478", soft: "#EDEBE6" },
+  { id: "new_order", label: "New Order", ...HUES.blue },
+  { id: "in_progress", label: "In Progress", ...HUES.purple },
+  { id: "waiting_parts", label: "Waiting on Parts", ...HUES.orange },
+  { id: "ready", label: "Ready for Pickup", ...HUES.green },
+  { id: "picked_up", label: "Picked Up", ...HUES.pink },
+  { id: "closed", label: "Closed", ...HUES.gray },
 ];
 
 const statusById = Object.fromEntries(STATUSES.map((s) => [s.id, s]));
@@ -89,11 +105,11 @@ const statusById = Object.fromEntries(STATUSES.map((s) => [s.id, s]));
 // A separate, simpler status just for tracking full patio doors at Metro Screenworks —
 // distinct from the main 5-stage order status, which stays "In Progress" the whole time.
 const METRO_STATUSES = [
-  { id: "waiting_on_customer", label: "Waiting on Customer", color: "#8B7355", soft: "#F0EBE3" },
-  { id: "need_to_order", label: "Need to Order", color: "#B23A2E", soft: "#F5E7E3" },
-  { id: "ordered", label: "Ordered", color: "#8B4A3D", soft: "#F5E7E3" },
-  { id: "ready_for_pickup", label: "Ready for Pick Up at Metro", color: "#5B8C82", soft: "#E5EFED" },
-  { id: "picked_up_from_metro", label: "Picked Up From Metro", color: "#7C8896", soft: "#EBEEF1" },
+  { id: "waiting_on_customer", label: "Waiting on Customer", ...HUES.gold },
+  { id: "need_to_order", label: "Need to Order", ...HUES.red },
+  { id: "ordered", label: "Ordered", ...HUES.blue },
+  { id: "ready_for_pickup", label: "Ready for Pick Up at Metro", ...HUES.green },
+  { id: "picked_up_from_metro", label: "Picked Up From Metro", ...HUES.teal },
 ];
 const metroStatusById = Object.fromEntries(METRO_STATUSES.map((s) => [s.id, s]));
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -412,16 +428,16 @@ const FRAME_THICKNESS_OPTIONS = ["None", "TBD", '5/16"', '3/8"', '7/16"'];
 // Colored tags for the unified "Needs Attention" list — one distinct color per task type,
 // so the tag itself communicates what kind of thing this is at a glance.
 const TASK_TAGS = {
-  followUp: { label: "Customer Follow Up", color: "#3E7CA6", soft: "#E4EEF5" },
-  metro: { label: "Metro Screenworks", color: "#C17817", soft: "#FBF0DF" },
-  sendReview: { label: "Send Review", color: "#5B8C82", soft: "#E5EFED" },
-  missingInfo: { label: "Missing Info", color: "#B23A2E", soft: "#F5E7E3" },
-  needsReview: { label: "Needs Review", color: "#182848", soft: "#E3E9ED" },
-  bookkeeping: { label: "Bookkeeping", color: "#7C5295", soft: "#EFE7F5" },
-  readyToClose: { label: "Ready to Close", color: "#5B8C82", soft: "#E5EFED" },
-  partsFollowUp: { label: "Follow Up", color: "#8B5A2B", soft: "#F2E8DD" },
-  confirmDetails: { label: "Confirm Details", color: "#2E7D82", soft: "#E1F0F1" },
-  myTask: { label: "My Task", color: "#5B4A8B", soft: "#EAE5F5" },
+  followUp: { label: "Customer Follow Up", ...HUES.blue },
+  metro: { label: "Metro Screenworks", ...HUES.orange },
+  sendReview: { label: "Send Review", ...HUES.gold },
+  missingInfo: { label: "Missing Info", ...HUES.red },
+  needsReview: { label: "Needs Review", ...HUES.navy },
+  bookkeeping: { label: "Bookkeeping", ...HUES.pink },
+  readyToClose: { label: "Ready to Close", ...HUES.green },
+  partsFollowUp: { label: "Follow Up", ...HUES.purple },
+  confirmDetails: { label: "Confirm Details", ...HUES.teal },
+  myTask: { label: "My Task", ...HUES.gray },
 };
 
 function tagForActionReason(reason) {
