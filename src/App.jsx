@@ -1768,6 +1768,9 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             );
           })()}
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
+          {order.notes && (
+            <p className="font-body text-xs italic whitespace-pre-line" style={{ color: COLORS.inkSoft }}>"{order.notes}"</p>
+          )}
           {showDue && (
             <p className="font-body text-xs" style={{ color: isOverdue ? COLORS.stamp : COLORS.inkSoft }}>
               Due {formatDateWithDay(dueDate)}{isOverdue && <span className="ml-1 font-display uppercase">· overdue</span>}
@@ -1825,9 +1828,12 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                 className="flex items-center justify-between py-2 border-b text-sm font-body"
                 style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, cursor: "grab" }}
               >
-                <span className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
-                  <GripVertical size={14} color={COLORS.inkSoft} />
-                  {order.customerName}
+                <span className="min-w-0" style={{ color: COLORS.ink }}>
+                  <span className="flex items-center gap-1.5">
+                    <GripVertical size={14} color={COLORS.inkSoft} />
+                    {order.customerName}
+                  </span>
+                  {order.notes && <span className="block text-xs italic whitespace-pre-line pl-5" style={{ color: COLORS.inkSoft }}>"{order.notes}"</span>}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-body text-xs" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
