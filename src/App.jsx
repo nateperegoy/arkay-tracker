@@ -3024,7 +3024,35 @@ function PickupPanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookup
         {scheduled.length === 0 ? (
           <p className="text-sm font-body py-6 text-center" style={{ color: COLORS.inkSoft }}>No pickups scheduled yet.</p>
         ) : (
-          <div>{scheduled.map((o) => <Row key={o.id} order={o} />)}</div>
+          (() => {
+            const today = todayISO();
+            const groups = [];
+            scheduled.forEach((o) => {
+              const last = groups[groups.length - 1];
+              if (last && last.date === o.pickupDate) last.orders.push(o);
+              else groups.push({ date: o.pickupDate, orders: [o] });
+            });
+            const dayLabel = (date) => {
+              const diff = daysBetween(today, date);
+              const short = new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              const weekday = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long" });
+              if (diff < 0) return { title: `Past due — ${weekday}, ${short}`, past: true };
+              if (diff === 0) return { title: `Today — ${short}` };
+              if (diff === 1) return { title: `Tomorrow — ${short}` };
+              return { title: `${weekday} — ${short}` };
+            };
+            return groups.map((g) => {
+              const { title, past } = dayLabel(g.date);
+              return (
+                <div key={g.date} className="mt-3">
+                  <p className="text-xs font-display uppercase tracking-wide pb-1 border-b-2" style={{ color: past ? COLORS.stamp : COLORS.ink, borderColor: past ? COLORS.stamp : COLORS.ink }}>
+                    {title}
+                  </p>
+                  {g.orders.map((o) => <Row key={o.id} order={o} />)}
+                </div>
+              );
+            });
+          })()
         )}
       </div>
 
