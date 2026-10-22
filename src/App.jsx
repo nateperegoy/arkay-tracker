@@ -47,7 +47,7 @@ import {
   PackageCheck,
   Inbox,
   CalendarDays,
-  GripVertical, ChevronUp, ChevronDown, Pin,
+  GripVertical, ChevronUp, ChevronDown, Pin, StickyNote,
 } from "lucide-react";
 
 /* ---------------------------------- BRAND ASSETS ---------------------------------- */
@@ -1510,6 +1510,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
 
 function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, onLookupCustomer }) {
   const [viewingCard, setViewingCard] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const s = statusById[order.status] || STATUSES[0];
   const total = (Number(order.screenPrice) || 0) + (Number(order.patioDoorPrice) || 0) + (Number(order.fullPatioReplacementPrice) || 0) + (Number(order.rushSurchargePrice) || 0);
   const totalCustomScreens = (Number(order.numScreensCustom) || 0) + (order.customScreensExtra || []).reduce((sum, c) => sum + (Number(c.qty) || 0), 0);
@@ -1550,7 +1551,7 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
             )
           )}
         </div>
-        <div className="flex gap-0.5 shrink-0">
+        <div className="flex flex-col items-center gap-0.5 shrink-0">
           <button
             onClick={() => setViewingCard(true)}
             className="p-1.5 rounded-md hover:bg-black/5"
@@ -1559,6 +1560,18 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
           >
             <Eye size={14} color={COLORS.inkSoft} />
           </button>
+          {order.notes && (
+            <button
+              onClick={() => setNotesOpen((v) => !v)}
+              className="p-1.5 rounded-md hover:bg-black/5"
+              aria-label={notesOpen ? "Hide notes" : "Show notes"}
+              aria-expanded={notesOpen}
+              title={notesOpen ? "Hide notes" : "Show notes"}
+              style={{ background: notesOpen ? COLORS.canvasDark : undefined }}
+            >
+              <StickyNote size={14} color={notesOpen ? COLORS.ink : COLORS.inkSoft} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1612,8 +1625,8 @@ function OrderCard({ order, onEdit, onDelete, onStatusChange, rates, allOrders, 
         )}
       </div>
 
-      {order.notes && (
-        <p className="font-body text-sm mt-3 italic truncate" style={{ color: COLORS.inkSoft }}>
+      {order.notes && notesOpen && (
+        <p className="font-body text-sm mt-3 italic whitespace-pre-line" style={{ color: COLORS.inkSoft }}>
           "{order.notes}"
         </p>
       )}
