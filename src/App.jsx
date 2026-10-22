@@ -1739,6 +1739,16 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   };
   const queueSource = [...active].sort((a, b) => rankOf(a.id) - rankOf(b.id));
   const { queue, total } = computeNightlyQueue(queueSource, 8, workProgress);
+  // Dropping a job from "Jobs in Queue" onto Today's Queue pins it there: onto a row to land
+  // just above it, or onto the card itself to land at the top of the pinned jobs.
+  const pinIntoQueue = (id, beforeId) => {
+    if (!id || queue.some((q) => q.order.id === id)) return false;
+    const next = pinned.filter((x) => x !== id);
+    const at = beforeId && next.includes(beforeId) ? next.indexOf(beforeId) : next.length;
+    next.splice(at, 0, id);
+    savePinned(next);
+    return true;
+  };
   const moveInQueue = (fromId, toId) => {
     if (fromId === toId) return;
     const ids = queue.map((q) => q.order.id);
@@ -1763,11 +1773,17 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     </span>
   );
 
-  const Row = ({ order, muted }) => {
+  const Row = ({ order, muted, canDrag }) => {
     const s = statusById[order.status] || STATUSES[0];
     const { dueDate, isOverdue, showDue } = getOrderTiming(order, rates);
     return (
-      <div className="py-3 border-b space-y-1.5" style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : 1 }}>
+      <div
+        className="py-3 border-b space-y-1.5"
+        style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : dragId === order.id ? 0.4 : 1, cursor: canDrag ? "grab" : undefined }}
+        draggable={canDrag}
+        onDragStart={canDrag ? (e) => { setDragId(order.id); e.dataTransfer.effectAllowed = "move"; } : undefined}
+        onDragEnd={canDrag ? () => setDragId(null) : undefined}
+      >
         <div>
           {order.isRush && (
             <span className="inline-block mb-1 font-body text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.stamp, color: "white" }}>
@@ -1821,8 +1837,13 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
 
   return (
     <div className="space-y-6">
-      {queue.length > 0 && (
-        <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+      {(queue.length > 0 || dragId) && (
+        <div
+          className="rounded-lg border bg-white p-4"
+          style={{ borderColor: dragId ? COLORS.ink : COLORS.line, borderStyle: dragId ? "dashed" : "solid" }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); pinIntoQueue(dragId, null); setDragId(null); }}
+        >
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-display uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
               <Moon size={13} color={COLORS.ink} /> Today's queue
@@ -1834,6 +1855,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
               <span className="text-xs font-body rounded-full px-2 py-0.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>{total} of 6–8 screens</span>
             </div>
           </div>
+          {queue.length === 0 && <p className="text-sm font-body py-3 text-center" style={{ color: COLORS.inkSoft }}>Drop a job here to make it today's priority.</p>}
           <div>
             {queue.map(({ order, count, partial, remainingTotal }, qi) => (
               <div
@@ -1841,7 +1863,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                 draggable
                 onDragStart={(e) => { setDragId(order.id); e.dataTransfer.effectAllowed = "move"; }}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); moveInQueue(dragId, order.id); setDragId(null); }}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (!pinIntoQueue(dragId, order.id)) moveInQueue(dragId, order.id); setDragId(null); }}
                 onDragEnd={() => setDragId(null)}
                 className="flex items-center justify-between py-2 border-b text-sm font-body"
                 style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, cursor: "grab" }}
@@ -1883,7 +1905,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
         {inProgress.length === 0 ? (
           <p className="text-sm font-body py-6 text-center" style={{ color: COLORS.inkSoft }}>Nothing in progress right now.</p>
         ) : (
-          <div>{inProgress.map((o) => <Row key={o.id} order={o} />)}</div>
+          <div>{inProgress.map((o) => <Row key={o.id} order={o} canDrag />)}</div>
         )}
       </div>
 
