@@ -1775,6 +1775,8 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     </span>
   );
 
+  // Called as a plain function (not <Row />) so rows keep their DOM nodes when drag state changes;
+  // as a component defined inside this one, every re-render would remount them and cancel the drag.
   const Row = ({ order, muted, canDrag }) => {
     const s = statusById[order.status] || STATUSES[0];
     const { dueDate, isOverdue, showDue } = getOrderTiming(order, rates);
@@ -1792,7 +1794,10 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
               ⚡ Rush Order
             </span>
           )}
-          <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
+          <p className="font-display text-sm truncate flex items-center gap-1" style={{ color: COLORS.ink }}>
+            {canDrag && <GripVertical size={14} color={COLORS.inkSoft} className="shrink-0" />}
+            {order.customerName}
+          </p>
           {(() => {
             const extraCustom = (order.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
             const items = (Number(order.numScreens) || 0) + (Number(order.numScreensPremium) || 0) + (Number(order.numScreensCustom) || 0) + extraCustom + (Number(order.patioDoorCount) || 0) + (Number(order.numPatioCustom) || 0);
@@ -1907,7 +1912,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
         {inProgress.length === 0 ? (
           <p className="text-sm font-body py-6 text-center" style={{ color: COLORS.inkSoft }}>Nothing in progress right now.</p>
         ) : (
-          <div>{inProgress.map((o) => <Row key={o.id} order={o} canDrag />)}</div>
+          <div>{inProgress.map((o) => <React.Fragment key={o.id}>{Row({ order: o, canDrag: true })}</React.Fragment>)}</div>
         )}
       </div>
 
@@ -1916,7 +1921,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
           <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
             <DoorOpen size={13} color={HUES.orange.color} /> Waiting on Metro Screenworks
           </p>
-          <div>{waitingOnMetro.map((o) => <Row key={o.id} order={o} />)}</div>
+          <div>{waitingOnMetro.map((o) => <React.Fragment key={o.id}>{Row({ order: o })}</React.Fragment>)}</div>
         </div>
       )}
 
@@ -1925,7 +1930,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
           <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
             <Clock size={13} color={HUES.orange.color} /> Waiting on parts (not prioritized)
           </p>
-          <div>{waiting.map((o) => <Row key={o.id} order={o} muted />)}</div>
+          <div>{waiting.map((o) => <React.Fragment key={o.id}>{Row({ order: o, muted: true })}</React.Fragment>)}</div>
         </div>
       )}
       {viewingOrder && <OrderViewModal order={viewingOrder} rates={rates} onClose={() => setViewingOrder(null)} onEdit={onEdit} onDelete={onDelete} allOrders={orders} onLookupCustomer={onLookupCustomer} />}
