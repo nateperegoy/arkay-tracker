@@ -3312,6 +3312,33 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
     return { screensCompleted, patioCompleted, minutesPerScreen, screensPerWeek, patioPerWeek, screensPerHour };
   }, [workProgress, range, type, timeStats.totalHours]);
 
+  // Value of work completed: each "What I Got Done" entry is priced at its order's average
+  // per-screen / per-patio-door price, so income is credited to the day the work happened,
+  // regardless of when the customer picks up or pays.
+  const completedValue = useMemo(() => {
+    const unit = new Map();
+    orders.forEach((o) => {
+      const extra = (o.customScreensExtra || []).reduce((a, c) => a + (Number(c.qty) || 0), 0);
+      const screenCount = (Number(o.numScreens) || 0) + (Number(o.numScreensPremium) || 0) + (Number(o.numScreensCustom) || 0) + extra;
+      const patioCount = (Number(o.patioDoorCount) || 0) + (Number(o.numPatioCustom) || 0);
+      unit.set(o.id, {
+        screen: screenCount > 0 ? (Number(o.screenPrice) || 0) / screenCount : 0,
+        patio: patioCount > 0 ? ((Number(o.patioDoorPrice) || 0) + (Number(o.fullPatioReplacementPrice) || 0)) / patioCount : 0,
+      });
+    });
+    const value = (workProgress || [])
+      .filter((p) => {
+        if (p.date < HOURLY_STATS_START_DATE) return false;
+        const d = new Date(p.date + "T00:00:00");
+        return d >= range.start && d <= range.end;
+      })
+      .reduce((sum, p) => {
+        const u = unit.get(p.orderId);
+        return u ? sum + (Number(p.screensCompleted) || 0) * u.screen + (Number(p.patioCompleted) || 0) * u.patio : sum;
+      }, 0);
+    return { value, perHour: timeStats.totalHours > 0 ? value / timeStats.totalHours : null };
+  }, [workProgress, orders, range, timeStats.totalHours]);
+
   // Jobs tab: work-volume averages for the period.
   const jobStats = useMemo(() => {
     const effectiveStart = range.start < new Date(HOURLY_STATS_START_DATE + "T00:00:00") ? new Date(HOURLY_STATS_START_DATE + "T00:00:00") : range.start;
@@ -3804,12 +3831,24 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
             );
           })()}
 
+          <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+            <p className="text-xs font-display uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>Work done — value of what you completed</p>
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard label="Hours worked" value={timeStats.totalHours.toFixed(1)} />
+              <StatCard label="Value completed" value={formatMoney(completedValue.value)} accent={COLORS.sage} />
+              <StatCard label="Completed $ / hour" value={completedValue.perHour !== null ? formatMoney(completedValue.perHour) : "—"} />
+            </div>
+            <p className="text-xs font-body italic mt-2" style={{ color: COLORS.inkSoft }}>
+              Credited to the day the work was logged in "What I Got Done" (each screen or patio door at its order's average price), whether or not the customer has picked up or paid. The figures below are pickup-based, so a big pickup day inflates them.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <StatCard label="Hours logged" value={timeStats.totalHours.toFixed(1)} />
             <StatCard label="Days worked" value={`${timeStats.daysWorked} of ${timeStats.totalDaysInPeriod}`} />
-            <StatCard label="$ / hour" value={timeStats.perHour !== null ? formatMoney(timeStats.perHour) : "—"} accent={COLORS.sage} />
-            <StatCard label="$ / day worked" value={timeStats.perDayWorked !== null ? formatMoney(timeStats.perDayWorked) : "—"} />
-            <StatCard label="$ / calendar day" value={timeStats.perDayOverall !== null ? formatMoney(timeStats.perDayOverall) : "—"} />
+            <StatCard label="Collected $ / hour" value={timeStats.perHour !== null ? formatMoney(timeStats.perHour) : "—"} accent={COLORS.sage} />
+            <StatCard label="Collected $ / day worked" value={timeStats.perDayWorked !== null ? formatMoney(timeStats.perDayWorked) : "—"} />
+            <StatCard label="Collected $ / calendar day" value={timeStats.perDayOverall !== null ? formatMoney(timeStats.perDayOverall) : "—"} />
             <StatCard label="Avg hours / day worked" value={timeStats.avgHoursPerDayWorked !== null ? timeStats.avgHoursPerDayWorked.toFixed(1) : "—"} />
           </div>
 
