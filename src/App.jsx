@@ -47,7 +47,7 @@ import {
   PackageCheck,
   Inbox,
   CalendarDays,
-  GripVertical, ChevronUp, ChevronDown,
+  GripVertical, ChevronUp, ChevronDown, Pin,
 } from "lucide-react";
 
 /* ---------------------------------- BRAND ASSETS ---------------------------------- */
@@ -1719,21 +1719,39 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       else localStorage.removeItem("arkay-queue-order");
     } catch (e) { /* storage unavailable; order lasts for this session only */ }
   };
-  const queueSource = manualOrder
-    ? [...active].sort((a, b) => {
-        const ia = manualOrder.indexOf(a.id), ib = manualOrder.indexOf(b.id);
-        if (ia === -1 && ib === -1) return 0;
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ia - ib;
-      })
-    : active;
+  // Pinned jobs stay at the top of the queue (in pinned order) until unpinned, on any day.
+  const [pinned, setPinned] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("arkay-queue-pinned") || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch (e) { return []; }
+  });
+  const savePinned = (ids) => {
+    setPinned(ids);
+    try { localStorage.setItem("arkay-queue-pinned", JSON.stringify(ids)); } catch (e) { /* session only */ }
+  };
+  const togglePin = (id) => savePinned(pinned.includes(id) ? pinned.filter((x) => x !== id) : [...pinned, id]);
+  const rankOf = (id) => {
+    const pi = pinned.indexOf(id);
+    if (pi !== -1) return pi - 1e6;
+    const mi = manualOrder ? manualOrder.indexOf(id) : -1;
+    return mi === -1 ? 1e6 : mi;
+  };
+  const queueSource = [...active].sort((a, b) => rankOf(a.id) - rankOf(b.id));
   const { queue, total } = computeNightlyQueue(queueSource, 8, workProgress);
   const moveInQueue = (fromId, toId) => {
     if (fromId === toId) return;
     const ids = queue.map((q) => q.order.id);
     const from = ids.indexOf(fromId), to = ids.indexOf(toId);
     if (from === -1 || to === -1) return;
+    const fromPinned = pinned.includes(fromId), toPinned = pinned.includes(toId);
+    if (fromPinned && toPinned) {
+      const next = pinned.filter((x) => x !== fromId);
+      next.splice(next.indexOf(toId) + (pinned.indexOf(fromId) < pinned.indexOf(toId) ? 1 : 0), 0, fromId);
+      savePinned(next);
+      return;
+    }
+    if (fromPinned !== toPinned) return; // pinned jobs always sit above unpinned ones
     ids.splice(to, 0, ids.splice(from, 1)[0]);
     saveManualOrder([...ids, ...queueSource.map((o) => o.id).filter((id) => !ids.includes(id))]);
   };
@@ -1839,6 +1857,9 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                   <span className="font-body text-xs" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
                     {partial ? `${count} of ${remainingTotal} screens` : `${count} screen${count === 1 ? "" : "s"} (all)`}
                   </span>
+                  <button onClick={() => togglePin(order.id)} className="p-1 rounded hover:bg-black/5" aria-label={pinned.includes(order.id) ? "Unpin" : "Pin to top"} title={pinned.includes(order.id) ? "Unpin" : "Pin to top (stays until unpinned)"}>
+                    <Pin size={13} color={pinned.includes(order.id) ? COLORS.stamp : COLORS.inkSoft} fill={pinned.includes(order.id) ? COLORS.stamp : "none"} />
+                  </button>
                   <button disabled={qi === 0} onClick={() => moveInQueue(order.id, queue[qi - 1].order.id)} className="p-1 rounded hover:bg-black/5 disabled:opacity-30" aria-label="Move up" title="Move up">
                     <ChevronUp size={13} color={COLORS.inkSoft} />
                   </button>
