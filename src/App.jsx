@@ -47,6 +47,7 @@ import {
   PackageCheck,
   Inbox,
   CalendarDays,
+  GripVertical, ChevronUp, ChevronDown,
 } from "lucide-react";
 
 /* ---------------------------------- BRAND ASSETS ---------------------------------- */
@@ -1703,7 +1704,39 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   // cares whether the door itself has come back yet, and stops showing once it's Closed.
   const waitingOnMetro = withDays(orders.filter((o) => o.fullPatioReplacement && o.metroStatus === "ordered" && o.status !== "closed" && o.status !== "new_order")).sort((a, b) => b.daysOpen - a.daysOpen);
   const waiting = withDays(orders.filter((o) => o.status === "waiting_parts" && !(o.fullPatioReplacement && o.metroStatus === "ordered"))).sort((a, b) => b.daysOpen - a.daysOpen);
-  const { queue, total } = computeNightlyQueue(active, 8, workProgress);
+  // Custom queue order: saved on this device for today only, then it resets to priority order.
+  const [manualOrder, setManualOrder] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("arkay-queue-order") || "null");
+      return saved && saved.date === todayISO() && Array.isArray(saved.ids) ? saved.ids : null;
+    } catch (e) { return null; }
+  });
+  const [dragId, setDragId] = useState(null);
+  const saveManualOrder = (ids) => {
+    setManualOrder(ids);
+    try {
+      if (ids) localStorage.setItem("arkay-queue-order", JSON.stringify({ date: todayISO(), ids }));
+      else localStorage.removeItem("arkay-queue-order");
+    } catch (e) { /* storage unavailable; order lasts for this session only */ }
+  };
+  const queueSource = manualOrder
+    ? [...active].sort((a, b) => {
+        const ia = manualOrder.indexOf(a.id), ib = manualOrder.indexOf(b.id);
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      })
+    : active;
+  const { queue, total } = computeNightlyQueue(queueSource, 8, workProgress);
+  const moveInQueue = (fromId, toId) => {
+    if (fromId === toId) return;
+    const ids = queue.map((q) => q.order.id);
+    const from = ids.indexOf(fromId), to = ids.indexOf(toId);
+    if (from === -1 || to === -1) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    saveManualOrder([...ids, ...queueSource.map((o) => o.id).filter((id) => !ids.includes(id))]);
+  };
 
   const CategoryIcons = ({ order }) => (
     <span className="flex items-center gap-1">
@@ -1773,16 +1806,39 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             <p className="text-xs font-display uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
               <Moon size={13} color={COLORS.ink} /> Today's queue
             </p>
-            <span className="text-xs font-body rounded-full px-2 py-0.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>{total} of 6–8 screens</span>
+            <div className="flex items-center gap-2">
+              {manualOrder && (
+                <button onClick={() => saveManualOrder(null)} className="text-xs font-body underline" style={{ color: COLORS.inkSoft }}>Reset order</button>
+              )}
+              <span className="text-xs font-body rounded-full px-2 py-0.5" style={{ background: COLORS.canvasDark, color: COLORS.ink }}>{total} of 6–8 screens</span>
+            </div>
           </div>
           <div>
-            {queue.map(({ order, count, partial, remainingTotal }) => (
-              <div key={order.id} className="flex items-center justify-between py-2 border-b text-sm font-body" style={{ borderColor: COLORS.line }}>
-                <span style={{ color: COLORS.ink }}>{order.customerName}</span>
+            {queue.map(({ order, count, partial, remainingTotal }, qi) => (
+              <div
+                key={order.id}
+                draggable
+                onDragStart={(e) => { setDragId(order.id); e.dataTransfer.effectAllowed = "move"; }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); moveInQueue(dragId, order.id); setDragId(null); }}
+                onDragEnd={() => setDragId(null)}
+                className="flex items-center justify-between py-2 border-b text-sm font-body"
+                style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, cursor: "grab" }}
+              >
+                <span className="flex items-center gap-1.5" style={{ color: COLORS.ink }}>
+                  <GripVertical size={14} color={COLORS.inkSoft} />
+                  {order.customerName}
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="font-body text-xs" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
                     {partial ? `${count} of ${remainingTotal} screens` : `${count} screen${count === 1 ? "" : "s"} (all)`}
                   </span>
+                  <button disabled={qi === 0} onClick={() => moveInQueue(order.id, queue[qi - 1].order.id)} className="p-1 rounded hover:bg-black/5 disabled:opacity-30" aria-label="Move up" title="Move up">
+                    <ChevronUp size={13} color={COLORS.inkSoft} />
+                  </button>
+                  <button disabled={qi === queue.length - 1} onClick={() => moveInQueue(order.id, queue[qi + 1].order.id)} className="p-1 rounded hover:bg-black/5 disabled:opacity-30" aria-label="Move down" title="Move down">
+                    <ChevronDown size={13} color={COLORS.inkSoft} />
+                  </button>
                   <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
                     <Eye size={13} color={COLORS.inkSoft} />
                   </button>
