@@ -4551,7 +4551,7 @@ const emptyRequestForm = {
   frameFeet: "",
   frameColor: "White",
   frameColorOther: "",
-  frameThickness: '5/16"',
+  frameThickness: THICKNESS_UNSURE,
   oversizedScreenWidth: "",
   isDroppingOffPatioScreen: false,
   patioScreenCount: "",
