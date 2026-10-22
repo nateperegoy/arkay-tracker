@@ -610,6 +610,11 @@ const invoiceTotalLine = (total) => `Total — ${invoiceMoney(total)}`;
 
 // Plain-text, line-by-line price breakdown for a saved order — shared by the order card's
 // "Ready for Pick Up" button, the Job Summary and the Quick Links panel, so all stay in sync.
+// A custom-priced screen priced above the standard rate is a larger-than-standard screen.
+function customScreenLabel(price, rates) {
+  return Number(price) > Number(rates.screen) ? "Window screen (large, custom size)" : "Window screen (custom size)";
+}
+
 function buildItemizedLines(order, rates) {
   const lines = [];
 
@@ -619,11 +624,11 @@ function buildItemizedLines(order, rates) {
   const customScreenRate = Number(order.customScreenPrice) || 0;
   if (standard > 0) lines.push(invoiceLine("Window screen (standard)", standard, rates.screen));
   if (oversized > 0) lines.push(invoiceLine(`Window screen (large, ${LARGE_SCREEN_LABEL})`, oversized, rates.screenPremium));
-  if (customScreens > 0) lines.push(invoiceLine("Window screen (custom size)", customScreens, customScreenRate));
+  if (customScreens > 0) lines.push(invoiceLine(customScreenLabel(customScreenRate, rates), customScreens, customScreenRate));
   (order.customScreensExtra || []).forEach((c) => {
     const qty = Number(c.qty) || 0;
     if (qty <= 0) return;
-    lines.push(invoiceLine("Window screen (custom size)", qty, Number(c.price) || 0));
+    lines.push(invoiceLine(customScreenLabel(c.price, rates), qty, Number(c.price) || 0));
   });
 
   const feet = Number(order.frameFeet) || 0;
@@ -1401,9 +1406,9 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
               <>
                 {row("Screens", order.numScreens || 0)}
                 {order.numScreensPremium > 0 && row(`Large screens (${LARGE_SCREEN_LABEL})`, `${order.numScreensPremium} @ $${rates.screenPremium}/ea`)}
-                {order.numScreensCustom > 0 && row(`At custom price`, `${order.numScreensCustom} @ $${order.customScreenPrice}/ea`)}
+                {order.numScreensCustom > 0 && row(Number(order.customScreenPrice) > Number(rates.screen) ? "Large screens, custom price" : "At custom price", `${order.numScreensCustom} @ $${order.customScreenPrice}/ea`)}
                 {(order.customScreensExtra || []).map((c, i) => (
-                  Number(c.qty) > 0 && <React.Fragment key={i}>{row(`At custom price`, `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
+                  Number(c.qty) > 0 && <React.Fragment key={i}>{row(Number(c.price) > Number(rates.screen) ? "Large screens, custom price" : "At custom price", `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
                 ))}
                 {row("Frame", `${order.frameFeet || 0} ft · ${order.frameColor || "White"}${order.frameThickness && order.frameThickness !== "None" ? ` · ${order.frameThickness}` : ""}`)}
               </>
