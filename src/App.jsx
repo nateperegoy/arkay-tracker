@@ -253,6 +253,14 @@ function getOrderTiming(order, rates) {
 // time zone the device or server this code happens to be running on is set to — so dates stay
 // correct and consistent no matter where the app is opened from.
 const todayISO = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Denver", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+// Moving an order into Ready for Pickup is the moment its work is finished, so that day is
+// stamped as the completion date (used by reports and the "Ready since" label). Any other
+// status change leaves the completion date alone.
+function withStatusChange(order, status) {
+  if (status === "ready" && order.status !== "ready") return { ...order, status, completionDate: todayISO() };
+  return { ...order, status };
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 function formatDate(str) {
@@ -686,6 +694,13 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   const setPhone = (e) => setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }));
 
+  // Choosing Ready for Pickup here stamps today as the completion date, same as moving an order
+  // to Ready from a card or the board.
+  const setStatus = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, status: value, completionDate: value === "ready" && f.status !== "ready" ? todayISO() : f.completionDate }));
+  };
+
   // Adding a completion date means the job is done, so bump status to Ready for Pickup —
   // unless it's already further along (Picked Up / Closed), which we don't want to undo.
   const setCompletionDate = (e) => {
@@ -872,7 +887,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Job Status</p>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Status</label>
-          <select className={inputCls} style={inputStyle} value={form.status} onChange={set("status")}>
+          <select className={inputCls} style={inputStyle} value={form.status} onChange={setStatus}>
             {STATUSES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
@@ -5513,7 +5528,7 @@ function InternalTracker() {
         return;
       }
     }
-    persist(orders.map((o) => (o.id === id ? { ...o, status } : o)));
+    persist(orders.map((o) => (o.id === id ? withStatusChange(o, status) : o)));
   };
   const confirmPendingStatusChange = () => {
     if (!pendingStatusChange) return;
