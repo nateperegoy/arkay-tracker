@@ -3021,42 +3021,41 @@ function PickupPanel({ orders, onEdit, onDelete, onStatusChange, rates, onLookup
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
-        <p className="text-xs font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Scheduled pickups — soonest first</p>
-        {scheduled.length === 0 ? (
+      {scheduled.length === 0 ? (
+        <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
+          <p className="text-xs font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Scheduled pickups</p>
           <p className="text-sm font-body py-6 text-center" style={{ color: COLORS.inkSoft }}>No pickups scheduled yet.</p>
-        ) : (
-          (() => {
-            const today = todayISO();
-            const groups = [];
-            scheduled.forEach((o) => {
-              const last = groups[groups.length - 1];
-              if (last && last.date === o.pickupDate) last.orders.push(o);
-              else groups.push({ date: o.pickupDate, orders: [o] });
-            });
-            const dayLabel = (date) => {
-              const diff = daysBetween(today, date);
-              const short = new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-              const weekday = new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long" });
-              if (diff < 0) return { title: `Past due — ${weekday}, ${short}`, past: true };
-              if (diff === 0) return { title: `Today — ${short}` };
-              if (diff === 1) return { title: `Tomorrow — ${short}` };
-              return { title: `${weekday} — ${short}` };
-            };
-            return groups.map((g) => {
-              const { title, past } = dayLabel(g.date);
-              return (
-                <div key={g.date} className="mt-3">
-                  <p className="text-xs font-display uppercase tracking-wide pb-1 border-b-2" style={{ color: past ? COLORS.stamp : COLORS.ink, borderColor: past ? COLORS.stamp : COLORS.ink }}>
-                    {title}
-                  </p>
-                  {g.orders.map((o) => <Row key={o.id} order={o} />)}
-                </div>
-              );
-            });
-          })()
-        )}
-      </div>
+        </div>
+      ) : (
+        (() => {
+          const today = todayISO();
+          const groups = [];
+          scheduled.forEach((o) => {
+            const last = groups[groups.length - 1];
+            if (last && last.date === o.pickupDate) last.orders.push(o);
+            else groups.push({ date: o.pickupDate, orders: [o] });
+          });
+          const dayLabel = (date) => {
+            const diff = daysBetween(today, date);
+            const d = new Date(date + "T00:00:00");
+            const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+            if (diff < 0) return { title: `Past due — ${weekday}, ${short}`, past: true };
+            if (diff === 0) return { title: `Today — ${short}` };
+            if (diff === 1) return { title: `Tomorrow — ${short}` };
+            return { title: `${weekday} — ${short}` };
+          };
+          return groups.map((g) => {
+            const { title, past } = dayLabel(g.date);
+            return (
+              <div key={g.date} className="rounded-lg border bg-white p-4" style={{ borderColor: past ? COLORS.stamp : COLORS.line }}>
+                <p className="text-xs font-display uppercase tracking-wide mb-1" style={{ color: past ? COLORS.stamp : COLORS.inkSoft }}>{title}</p>
+                <div>{g.orders.map((o) => <Row key={o.id} order={o} />)}</div>
+              </div>
+            );
+          });
+        })()
+      )}
 
       <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
         <p className="text-xs font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Unscheduled Pickups — No Date Yet</p>
