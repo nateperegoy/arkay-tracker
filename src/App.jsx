@@ -1847,9 +1847,23 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
           >
             {STATUSES.map((st) => <option key={st.id} value={st.id}>{st.label}</option>)}
           </select>
-          <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5 shrink-0" aria-label="View order details" title="View order">
-            <Eye size={14} color={COLORS.inkSoft} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {canDrag && (
+              <button
+                onClick={() => togglePin(order.id)}
+                className="flex items-center gap-1 px-2 py-1 rounded-full font-body text-xs"
+                style={{ background: pinned.includes(order.id) ? COLORS.canvasDark : "transparent", color: pinned.includes(order.id) ? COLORS.stamp : COLORS.inkSoft, border: `1px solid ${COLORS.line}` }}
+                aria-label={pinned.includes(order.id) ? "Remove from Today's queue" : "Add to Today's queue"}
+                title={pinned.includes(order.id) ? "Pinned to Today's queue — tap to unpin" : "Add to Today's queue (works on touch screens)"}
+              >
+                <Pin size={12} fill={pinned.includes(order.id) ? COLORS.stamp : "none"} />
+                {pinned.includes(order.id) ? "In queue" : "Add to queue"}
+              </button>
+            )}
+            <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
+              <Eye size={14} color={COLORS.inkSoft} />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1888,7 +1902,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                 className="flex items-center justify-between py-2 border-b text-sm font-body"
                 style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, cursor: "grab" }}
               >
-                <span className="min-w-0" style={{ color: COLORS.ink }}>
+                <span className="min-w-0 flex-1 pr-2" style={{ color: COLORS.ink }}>
                   <span className="flex items-center gap-1.5">
                     <GripVertical size={14} color={COLORS.inkSoft} />
                     {order.customerName}
@@ -1896,7 +1910,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                   {order.notes && <span className="block text-xs italic whitespace-pre-line pl-5" style={{ color: COLORS.inkSoft }}>"{order.notes}"</span>}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-body text-xs" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
+                  <span className="font-body text-xs whitespace-nowrap" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
                     {partial ? `${count} of ${remainingTotal} screens` : `${count} screen${count === 1 ? "" : "s"} (all)`}
                   </span>
                   <button onClick={() => togglePin(order.id)} className="p-1 rounded hover:bg-black/5" aria-label={pinned.includes(order.id) ? "Unpin" : "Pin to top"} title={pinned.includes(order.id) ? "Unpin" : "Pin to top (stays until unpinned)"}>
