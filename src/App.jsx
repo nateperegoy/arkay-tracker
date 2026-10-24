@@ -1727,6 +1727,8 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     } catch (e) { return null; }
   });
   const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null); // queue row id, or "__card__", under the pointer
+  const [dragPos, setDragPos] = useState(null);
   const saveManualOrder = (ids) => {
     setManualOrder(ids);
     try {
@@ -1754,6 +1756,55 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
   };
   const queueSource = [...active].sort((a, b) => rankOf(a.id) - rankOf(b.id));
   const { queue, total } = computeNightlyQueue(queueSource, 8, workProgress);
+  // Pointer-based drag (mouse, pen and touch alike). HTML5 drag-and-drop doesn't fire on phones.
+  const dropTargetAt = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    const row = el && el.closest("[data-qrow]");
+    if (row) return row.getAttribute("data-qrow");
+    return el && el.closest("[data-qcard]") ? "__card__" : null;
+  };
+  const startDrag = (e, id) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    setDragId(id);
+    setDragPos({ x: e.clientX, y: e.clientY });
+    let lastY = e.clientY;
+    const scroller = setInterval(() => {
+      if (lastY < 90) window.scrollBy(0, -14);
+      else if (lastY > window.innerHeight - 90) window.scrollBy(0, 14);
+    }, 16);
+    const move = (ev) => {
+      lastY = ev.clientY;
+      setDragPos({ x: ev.clientX, y: ev.clientY });
+      setOverId(dropTargetAt(ev.clientX, ev.clientY));
+    };
+    const finish = (ev, drop) => {
+      clearInterval(scroller);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+      if (drop) {
+        const target = dropTargetAt(ev.clientX, ev.clientY);
+        if (target === "__card__") pinIntoQueue(id, null);
+        else if (target && target !== id) { if (!pinIntoQueue(id, target)) moveInQueue(id, target); }
+      }
+      setDragId(null);
+      setOverId(null);
+      setDragPos(null);
+    };
+    const up = (ev) => finish(ev, true);
+    const cancel = (ev) => finish(ev, false);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+  };
+  const gripProps = (id) => ({
+    onPointerDown: (e) => startDrag(e, id),
+    style: { touchAction: "none", cursor: "grab" },
+    "aria-label": "Drag to move",
+    title: "Drag to move",
+  });
+
   // Dropping a job from "Jobs in Queue" onto Today's Queue pins it there: onto a row to land
   // just above it, or onto the card itself to land at the top of the pinned jobs.
   const pinIntoQueue = (id, beforeId) => {
@@ -1796,10 +1847,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     return (
       <div
         className="py-3 border-b space-y-1.5"
-        style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : dragId === order.id ? 0.4 : 1, cursor: canDrag ? "grab" : undefined }}
-        draggable={canDrag}
-        onDragStart={canDrag ? (e) => { setDragId(order.id); e.dataTransfer.effectAllowed = "move"; } : undefined}
-        onDragEnd={canDrag ? () => setDragId(null) : undefined}
+        style={{ borderColor: COLORS.line, opacity: muted ? 0.7 : dragId === order.id ? 0.4 : 1 }}
       >
         <div>
           {order.isRush && (
@@ -1808,7 +1856,11 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             </span>
           )}
           <p className="font-display text-sm truncate flex items-center gap-1" style={{ color: COLORS.ink }}>
-            {canDrag && <GripVertical size={14} color={COLORS.inkSoft} className="shrink-0" />}
+            {canDrag && (
+              <span {...gripProps(order.id)} className="shrink-0 -ml-2 px-2 py-2 select-none" style={{ touchAction: "none", cursor: "grab" }}>
+                <GripVertical size={16} color={COLORS.inkSoft} />
+              </span>
+            )}
             {order.customerName}
           </p>
           {(() => {
@@ -1873,10 +1925,9 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     <div className="space-y-6">
       {(queue.length > 0 || dragId) && (
         <div
+          data-qcard
           className="rounded-lg border bg-white p-4"
-          style={{ borderColor: dragId ? COLORS.ink : COLORS.line, borderStyle: dragId ? "dashed" : "solid" }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); pinIntoQueue(dragId, null); setDragId(null); }}
+          style={{ borderColor: dragId ? COLORS.ink : COLORS.line, borderStyle: dragId ? "dashed" : "solid", background: overId === "__card__" ? COLORS.canvasDark : undefined }}
         >
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-display uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
@@ -1894,17 +1945,15 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             {queue.map(({ order, count, partial, remainingTotal }, qi) => (
               <div
                 key={order.id}
-                draggable
-                onDragStart={(e) => { setDragId(order.id); e.dataTransfer.effectAllowed = "move"; }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (!pinIntoQueue(dragId, order.id)) moveInQueue(dragId, order.id); setDragId(null); }}
-                onDragEnd={() => setDragId(null)}
+                data-qrow={order.id}
                 className="flex items-center justify-between py-2 border-b text-sm font-body"
-                style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, cursor: "grab" }}
+                style={{ borderColor: COLORS.line, opacity: dragId === order.id ? 0.4 : 1, boxShadow: overId === order.id && dragId !== order.id ? `0 -3px 0 ${COLORS.ink}` : undefined }}
               >
                 <span className="min-w-0 flex-1 pr-2" style={{ color: COLORS.ink }}>
                   <span className="flex items-center gap-1.5">
-                    <GripVertical size={14} color={COLORS.inkSoft} />
+                    <span {...gripProps(order.id)} className="shrink-0 -ml-2 px-2 py-2 select-none">
+                      <GripVertical size={16} color={COLORS.inkSoft} />
+                    </span>
                     {order.customerName}
                   </span>
                   {order.notes && <span className="block text-xs italic whitespace-pre-line pl-5" style={{ color: COLORS.inkSoft }}>"{order.notes}"</span>}
@@ -1958,6 +2007,14 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             <Clock size={13} color={HUES.orange.color} /> Waiting on parts (not prioritized)
           </p>
           <div>{waiting.map((o) => <React.Fragment key={o.id}>{Row({ order: o, muted: true })}</React.Fragment>)}</div>
+        </div>
+      )}
+      {dragId && dragPos && (
+        <div
+          className="fixed z-50 pointer-events-none rounded-full px-3 py-1.5 font-display text-sm shadow-lg"
+          style={{ left: dragPos.x + 12, top: dragPos.y - 18, background: COLORS.ink, color: "white" }}
+        >
+          {(orders.find((o) => o.id === dragId) || {}).customerName || "Job"}
         </div>
       )}
       {viewingOrder && <OrderViewModal order={viewingOrder} rates={rates} onClose={() => setViewingOrder(null)} onEdit={onEdit} onDelete={onDelete} allOrders={orders} onLookupCustomer={onLookupCustomer} />}
