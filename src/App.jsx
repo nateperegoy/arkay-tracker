@@ -1726,6 +1726,20 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       return saved && saved.date === todayISO() && Array.isArray(saved.ids) ? saved.ids : null;
     } catch (e) { return null; }
   });
+  const [openNotes, setOpenNotes] = useState([]);
+  const toggleNotes = (id) => setOpenNotes((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  const NotesButton = (order) => order.notes ? (
+    <button
+      onClick={() => toggleNotes(order.id)}
+      className="p-1 rounded hover:bg-black/5"
+      aria-label={openNotes.includes(order.id) ? "Hide notes" : "Show notes"}
+      aria-expanded={openNotes.includes(order.id)}
+      title={openNotes.includes(order.id) ? "Hide notes" : "Show notes"}
+      style={{ background: openNotes.includes(order.id) ? COLORS.canvasDark : undefined }}
+    >
+      <StickyNote size={14} color={openNotes.includes(order.id) ? COLORS.ink : COLORS.inkSoft} />
+    </button>
+  ) : null;
   const [dragId, setDragId] = useState(null);
   const [overId, setOverId] = useState(null); // queue row id, or "__card__", under the pointer
   const [dragPos, setDragPos] = useState(null);
@@ -1780,6 +1794,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     };
     const finish = (ev, drop) => {
       clearInterval(scroller);
+      window.removeEventListener("touchmove", blockScroll);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", cancel);
@@ -1794,6 +1809,8 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
     };
     const up = (ev) => finish(ev, true);
     const cancel = (ev) => finish(ev, false);
+    const blockScroll = (ev) => ev.preventDefault();
+    window.addEventListener("touchmove", blockScroll, { passive: false });
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", cancel);
@@ -1874,7 +1891,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
             );
           })()}
           <PhoneLink phone={order.phone} className="font-body text-xs underline" />
-          {order.notes && (
+          {order.notes && openNotes.includes(order.id) && (
             <p className="font-body text-xs italic whitespace-pre-line" style={{ color: COLORS.inkSoft }}>"{order.notes}"</p>
           )}
           {showDue && (
@@ -1912,6 +1929,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                 {pinned.includes(order.id) ? "In queue" : "Add to queue"}
               </button>
             )}
+            {NotesButton(order)}
             <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
               <Eye size={14} color={COLORS.inkSoft} />
             </button>
@@ -1956,7 +1974,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                     </span>
                     {order.customerName}
                   </span>
-                  {order.notes && <span className="block text-xs italic whitespace-pre-line pl-5" style={{ color: COLORS.inkSoft }}>"{order.notes}"</span>}
+                  {order.notes && openNotes.includes(order.id) && <span className="block text-xs italic whitespace-pre-line pl-5" style={{ color: COLORS.inkSoft }}>"{order.notes}"</span>}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-body text-xs whitespace-nowrap" style={{ color: partial ? COLORS.stamp : COLORS.inkSoft }}>
@@ -1971,6 +1989,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
                   <button disabled={qi === queue.length - 1} onClick={() => moveInQueue(order.id, queue[qi + 1].order.id)} className="p-1 rounded hover:bg-black/5 disabled:opacity-30" aria-label="Move down" title="Move down">
                     <ChevronDown size={13} color={COLORS.inkSoft} />
                   </button>
+                  {NotesButton(order)}
                   <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
                     <Eye size={13} color={COLORS.inkSoft} />
                   </button>
