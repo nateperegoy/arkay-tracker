@@ -3399,8 +3399,11 @@ function ReportDayPickerModal({ value, onSelect, onClose, timeLogs, workProgress
   );
 }
 
-function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }) {
+function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates, onSaveExpense }) {
   const now = new Date();
+  // Lets a month's logged expenses be corrected after saving (Financials → monthly list).
+  const [editingExpense, setEditingExpense] = useState(null); // 'YYYY-MM'
+  const [editingExpenseValue, setEditingExpenseValue] = useState("");
   const [reportTab, setReportTab] = useState("overview");
   const [type, setType] = useState("monthly");
   const [day, setDay] = useState(todayISO());
@@ -4218,11 +4221,58 @@ function ReportsPanel({ orders, timeLogs, monthlyExpenses, workProgress, rates }
                         {rows.map((r) => {
                           const label = new Date(r.year, r.month - 1, 1).toLocaleDateString("en-US", { month: "long" });
                           const hasExp = r.expenses !== null && r.expenses !== undefined;
+                          const monthKey = `${r.year}-${String(r.month).padStart(2, "0")}`;
+                          const canEditExp = (monthlyExpenses || []).some((m) => m.month === monthKey);
+                          const isEditing = editingExpense === monthKey;
                           return (
                             <div key={r.month} className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm font-body rounded-md px-3 py-2" style={{ background: COLORS.canvasDark }}>
                               <span className="flex-1 min-w-[90px]" style={{ color: COLORS.ink }}>{label}</span>
                               <span style={{ color: COLORS.inkSoft }}>Income <strong className="font-mono" style={{ color: COLORS.ink }}>{formatMoney(r.income)}</strong></span>
-                              <span style={{ color: COLORS.inkSoft }}>Exp <strong className="font-mono" style={{ color: COLORS.ink }}>{hasExp ? formatMoney(r.expenses) : "—"}</strong></span>
+                              {isEditing ? (
+                                <span className="flex items-center gap-2" style={{ color: COLORS.inkSoft }}>
+                                  Exp
+                                  <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    step="0.01"
+                                    autoFocus
+                                    className="rounded-md border px-2 py-1 text-sm font-mono"
+                                    style={{ borderColor: COLORS.line, color: COLORS.ink, width: 96 }}
+                                    value={editingExpenseValue}
+                                    onChange={(e) => setEditingExpenseValue(e.target.value)}
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const amt = Number(editingExpenseValue);
+                                      if (editingExpenseValue === "" || isNaN(amt) || amt < 0) return;
+                                      onSaveExpense(monthKey, amt);
+                                      setEditingExpense(null);
+                                    }}
+                                    className="font-display text-xs uppercase tracking-wide underline"
+                                    style={{ color: COLORS.slate }}
+                                  >
+                                    Save
+                                  </button>
+                                  <button onClick={() => setEditingExpense(null)} className="font-display text-xs uppercase tracking-wide underline" style={{ color: COLORS.inkSoft }}>
+                                    Cancel
+                                  </button>
+                                </span>
+                              ) : (
+                                <span style={{ color: COLORS.inkSoft }}>
+                                  Exp <strong className="font-mono" style={{ color: COLORS.ink }}>{hasExp ? formatMoney(r.expenses) : "—"}</strong>
+                                  {canEditExp && (
+                                    <button
+                                      onClick={() => { setEditingExpense(monthKey); setEditingExpenseValue(String(r.expenses ?? "")); }}
+                                      className="ml-2 font-display text-xs uppercase tracking-wide underline"
+                                      style={{ color: COLORS.slate }}
+                                      aria-label={`Edit ${label} expenses`}
+                                    >
+                                      Edit
+                                    </button>
+                                  )}
+                                </span>
+                              )}
                               <span style={{ color: COLORS.inkSoft }}>Net <strong className="font-mono" style={{ color: hasExp ? (r.income - r.expenses >= 0 ? COLORS.sage : COLORS.stamp) : COLORS.inkSoft }}>{hasExp ? formatMoney(r.income - r.expenses) : "—"}</strong></span>
                             </div>
                           );
@@ -6168,7 +6218,7 @@ function InternalTracker() {
         ) : view === "complete" ? (
           <CompletePanel orders={orders} onEdit={openEdit} onDelete={deleteOrder} onStatusChange={changeStatus} rates={rates} onLookupCustomer={lookupCustomer} />
         ) : (
-          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} workProgress={workProgress} rates={rates} />
+          <ReportsPanel orders={orders} timeLogs={timeLogs} monthlyExpenses={monthlyExpenses} workProgress={workProgress} rates={rates} onSaveExpense={saveMonthlyExpense} />
         )}
 
         {saveError && (
