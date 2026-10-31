@@ -4844,7 +4844,16 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
   const patioScreensCost = standardPatioCount * rates.patioDoor + oversizedPatioCount * rates.patioDoorPremium;
   const fixedTotal = screensCost + patioScreensCost;
 
-  const goNext = () => { setError(""); setStep((s) => s + 1); };
+  const goNext = () => {
+    // Custom-built screens can't be built without knowing which sides get the tabs and springs,
+    // so the screens step won't continue until every set has an answer ("Not sure" counts).
+    if (step === 2 && form.needsCustomScreens && !form.needsMeasuringGuide && form.customScreenSets.some((s) => !s.tabsSprings)) {
+      setError('Please choose where the tabs and springs go for each custom screen. Pick "Not sure" if you don\'t know.');
+      return;
+    }
+    setError("");
+    setStep((s) => s + 1);
+  };
   const goBack = () => { setError(""); setStep((s) => Math.max(0, s - 1)); };
 
   const handleSubmit = async () => {
