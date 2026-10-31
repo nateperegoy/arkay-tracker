@@ -450,6 +450,7 @@ const TASK_TAGS = {
   readyToClose: { label: "Ready to Close", ...HUES.green },
   partsFollowUp: { label: "Follow Up", ...HUES.purple },
   confirmDetails: { label: "Confirm Details", ...HUES.teal },
+  sendGuide: { label: "Send Guide", ...HUES.gold },
   myTask: { label: "My Task", ...HUES.gray },
 };
 
@@ -2472,6 +2473,14 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         >
                           {TASK_TAGS.followUp.label}
                         </span>
+                        {sub.needsMeasuringGuide && (
+                          <span
+                            className="font-body text-xs font-semibold rounded-full px-2 py-0.5"
+                            style={{ background: TASK_TAGS.sendGuide.soft, color: TASK_TAGS.sendGuide.color }}
+                          >
+                            {TASK_TAGS.sendGuide.label}
+                          </span>
+                        )}
                         {submissionNeedsConfirmation(sub) && (
                           <span
                             className="font-body text-xs font-semibold rounded-full px-2 py-0.5"
@@ -4845,11 +4854,23 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
   const fixedTotal = screensCost + patioScreensCost;
 
   const goNext = () => {
-    // Custom-built screens can't be built without knowing which sides get the tabs and springs,
-    // so the screens step won't continue until every set has an answer ("Not sure" counts).
-    if (step === 2 && form.needsCustomScreens && !form.needsMeasuringGuide && form.customScreenSets.some((s) => !s.tabsSprings)) {
-      setError('Please choose where the tabs and springs go for each custom screen. Pick "Not sure" if you don\'t know.');
-      return;
+    // Custom-built screens can't be built without the size, thickness and tabs/springs side,
+    // so the screens step won't continue until every set has them ("Not sure" answers count).
+    if (step === 2 && form.needsCustomScreens && !form.needsMeasuringGuide) {
+      const missing = new Set();
+      form.customScreenSets.forEach((cs) => {
+        if (!(Number(cs.howMany) > 0)) missing.add("how many");
+        if (!(Number(cs.widthWhole) > 0)) missing.add("width");
+        if (!(Number(cs.heightWhole) > 0)) missing.add("height");
+        if (!cs.frameThickness) missing.add("frame thickness");
+        if (!cs.tabsSprings) missing.add("where the tabs and springs go");
+      });
+      if (missing.size > 0) {
+        const list = [...missing];
+        const joined = list.length > 1 ? `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}` : list[0];
+        setError(`For each custom screen, please fill in ${joined}. Pick "Not sure" if you don't know the thickness or tabs and springs.`);
+        return;
+      }
     }
     setError("");
     setStep((s) => s + 1);
