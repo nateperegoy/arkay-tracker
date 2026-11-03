@@ -322,6 +322,27 @@ function toClipboardText(s) {
   return (s || "").replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
 }
 
+// Copies text so line breaks survive the paste: plain text uses "\r\n" (works for textareas
+// like Google Voice's compose box) and an HTML flavor with <br> covers rich-text targets.
+// Falls back to plain writeText if the browser blocks multi-format clipboard writes.
+async function copyWithLineBreaks(message) {
+  const plain = toClipboardText(message);
+  try {
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+      const esc = (message || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const html = `<div>${esc.replace(/\r?\n/g, "<br>")}</div>`;
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+          "text/html": new Blob([html], { type: "text/html" }),
+        }),
+      ]);
+      return;
+    }
+  } catch (e) {}
+  try { await navigator.clipboard.writeText(plain); } catch (e) {}
+}
+
 // Copies the phone number first (so it's ready to paste into Google Voice's search/recipient
 // field right away, instead of having to go hunt for it) and opens the app, then swaps the
 // clipboard over to the actual message a few seconds later — timed for about when the number
@@ -4464,12 +4485,7 @@ function QuickLinksPanel({ rates, orders }) {
   const copy = async (key, value) => {
     setCopiedKey(key);
     setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
-    const selectedOrder = orders.find((o) => o.id === selectedOrderId);
-    if (selectedOrder && selectedOrder.phone) {
-      copyNumberThenMessage(selectedOrder.phone, value);
-    } else {
-      try { await navigator.clipboard.writeText(toClipboardText(value)); } catch (e) {}
-    }
+    await copyWithLineBreaks(value);
   };
 
   return (
@@ -4523,8 +4539,6 @@ function QuickLinksPanel({ rates, orders }) {
           >
             {copiedKey === item.key
               ? "Copied!"
-              : orders.find((o) => o.id === selectedOrderId)?.phone
-              ? "Copy & Open Voice"
               : item.short
               ? "Copy link"
               : "Copy message"}
