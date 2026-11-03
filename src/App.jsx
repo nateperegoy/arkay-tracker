@@ -122,7 +122,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 const DEFAULT_RATES = {
   screen: 35, // per standard window screen
   screenPremium: 45, // per oversized/premium screen
-  patioDoor: 65, // per standard patio door screen
+  patioDoor: 75, // per standard patio door screen
   patioDoorPremium: 85, // per oversized/premium patio door screen
   frameFt: 3, // per linear foot, white frame
   frameFtColor: 4, // per linear foot, non-white frame
