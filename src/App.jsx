@@ -348,13 +348,8 @@ async function copyWithLineBreaks(message) {
 // clipboard over to the actual message a few seconds later — timed for about when the number
 // would already be pasted in and the user is ready to paste the message text next.
 function copyNumberThenMessage(phone, message) {
-  const digits = (phone || "").replace(/\D/g, "");
-  const formattedNumber = digits.length === 11 ? `+${digits}` : digits.length === 10 ? `+1${digits}` : phone || "";
-  navigator.clipboard.writeText(formattedNumber).catch(() => {});
-  window.open(voiceLink(phone), "_blank", "noopener,noreferrer");
-  setTimeout(() => {
-    navigator.clipboard.writeText(toClipboardText(message)).catch(() => {});
-  }, 3500);
+  // Copy-only: no Google Voice window, no number swap. Line breaks preserved.
+  copyWithLineBreaks(message);
 }
 
 function voiceCallLink(raw) {
