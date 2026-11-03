@@ -2480,6 +2480,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
             )}
             {sorted.map((sub) => {
               const isDropoff = sub.requestType === "dropoff";
+              const isQuestion = sub.requestType === "question";
               const fullDoorDims = sub.fullDoorWidthWhole || sub.fullDoorHeightWhole
                 ? `${sub.fullDoorWidthWhole || 0}${sub.fullDoorWidthFraction && sub.fullDoorWidthFraction !== "0" ? ` ${sub.fullDoorWidthFraction}` : ""}"×${sub.fullDoorHeightWhole || 0}${sub.fullDoorHeightFraction && sub.fullDoorHeightFraction !== "0" ? ` ${sub.fullDoorHeightFraction}` : ""}"`
                 : null;
@@ -2512,9 +2513,9 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         )}
                         <span
                           className="font-display text-xs rounded-full px-2 py-0.5 text-white"
-                          style={{ background: isDropoff ? COLORS.stamp : COLORS.sage }}
+                          style={{ background: isDropoff ? COLORS.stamp : isQuestion ? COLORS.slate : COLORS.sage }}
                         >
-                          {isDropoff ? "Drop-off" : "Estimate request"}
+                          {isDropoff ? "Drop-off" : isQuestion ? "Question" : "Estimate request"}
                         </span>
                       </div>
                       <p className="font-display text-base truncate" style={{ color: COLORS.ink }}>{sub.customerName}</p>
@@ -2567,14 +2568,16 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                     {sub.notes && <p className="italic" style={{ color: COLORS.inkSoft }}>"{sub.notes}"</p>}
                   </div>
 
-                  <p className="font-body text-sm font-semibold mb-3" style={{ color: COLORS.sage }}>
+                  {!isQuestion && <p className="font-body text-sm font-semibold mb-3" style={{ color: COLORS.sage }}>
                     Estimate shown to customer: {sub.fullDoorReplacement ? (sub.estimateFixed > 0 ? `${formatMoney(sub.estimateFixed)} + $300–$350` : "$300–$350") : formatMoney(sub.estimateFixed)}
-                  </p>
+                  </p>}
 
                   <div className="flex gap-3">
-                    <button onClick={() => onImport(sub)} className="flex-1 rounded-md py-2 text-sm font-display uppercase tracking-wide text-white" style={{ background: COLORS.slate }}>
-                      Import as order
-                    </button>
+                    {!isQuestion && (
+                      <button onClick={() => onImport(sub)} className="flex-1 rounded-md py-2 text-sm font-display uppercase tracking-wide text-white" style={{ background: COLORS.slate }}>
+                        Import as order
+                      </button>
+                    )}
                     {!isDropoff && (
                       confirmingDismissId === sub.id ? (
                         <div className="flex-1 flex items-center gap-2">
@@ -5701,6 +5704,118 @@ function DashboardLogin({ onUnlock, onBack }) {
   );
 }
 
+// Customer-facing "Ask a Question" form — for people who aren't ready for an estimate. Saves into
+// the same "customer-submissions" list as estimate/drop-off requests (requestType "question"),
+// so every customer message lands in one Inbox.
+function QuestionForm({ onBackToLanding }) {
+  const [form, setForm] = useState({ customerName: "", phone: "", email: "", message: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const submissionIdRef = useRef(uid());
+
+  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const setPhone = (e) => setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }));
+
+  const handleSubmit = async () => {
+    const digits = (form.phone || "").replace(/\D/g, "");
+    if (!form.customerName.trim()) { setError("Please add your name."); return; }
+    if (digits.length !== 10) { setError("Please add a 10-digit phone number so I can get back to you."); return; }
+    if (!form.message.trim()) { setError("Please type your question."); return; }
+    setError("");
+    setSubmitting(true);
+    const submission = {
+      id: submissionIdRef.current,
+      submittedAt: Date.now(),
+      submittedDate: todayISO(),
+      requestType: "question",
+      customerName: form.customerName.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      message: form.message.trim(),
+      notes: form.message.trim(),
+      status: "new",
+    };
+    try {
+      let existing = [];
+      try {
+        const result = await window.storage.get("customer-submissions", false);
+        if (result && result.value) existing = JSON.parse(result.value);
+      } catch (e) {
+        existing = [];
+      }
+      await window.storage.set("customer-submissions", JSON.stringify([submission, ...existing]), false);
+    } catch (e) {
+      // Same as the estimate form: never block the customer's thank-you over a save hiccup.
+    }
+    setSubmitting(false);
+    setDone(true);
+  };
+
+  const cardCls = "rounded-3xl p-6 sm:p-8 bg-white shadow-sm";
+  const cardStyle = { border: `1px solid ${COLORS.line}` };
+  const inputCls = "w-full rounded-xl border px-4 py-3 text-base font-body bg-white";
+  const inputStyle = { borderColor: COLORS.line, color: COLORS.ink };
+  const labelCls = "block text-xs font-body font-semibold mb-1.5";
+  const firstName = form.customerName.trim().split(" ")[0] || "";
+
+  return (
+    <div className="min-h-screen font-body flex flex-col" style={{ background: COLORS.canvas }}>
+      <GlobalStyle />
+      <div className="max-w-lg mx-auto px-4 pt-8 pb-4 flex flex-col items-center w-full">
+        <img src={LOGO_HORIZONTAL} alt="Arkay Window Screens" className="h-12 w-auto" />
+        <p className="font-display text-sm uppercase tracking-wide mt-3" style={{ color: COLORS.ink, borderBottom: `2px solid ${COLORS.sage}`, paddingBottom: 4 }}>
+          Ask a Question
+        </p>
+      </div>
+      <div className="max-w-lg mx-auto px-4 pb-28 w-full flex-1">
+        {done ? (
+          <div className={`${cardCls} text-center`} style={cardStyle}>
+            <div className="inline-flex items-center justify-center rounded-full mb-4" style={{ width: 64, height: 64, background: COLORS.sageSoft }}>
+              <CheckCircle2 size={30} color={COLORS.sage} />
+            </div>
+            <h2 className="font-display text-xl uppercase tracking-wide" style={{ color: COLORS.ink }}>{firstName ? `Thanks, ${firstName}!` : "Thanks!"}</h2>
+            <p className="font-body text-sm mt-3" style={{ color: COLORS.inkSoft }}>
+              {`I'll get back to you at ${form.phone || "the number you provided"}, usually the same business day.`}
+            </p>
+            <p className="font-body text-sm mt-3" style={{ color: COLORS.ink }}>— {OWNER_NAME || "the Arkay team"}</p>
+            <button onClick={onBackToLanding} className="mt-6 font-body text-sm underline" style={{ color: COLORS.slate }}>Back to start</button>
+          </div>
+        ) : (
+          <div className={`${cardCls} space-y-4`} style={cardStyle}>
+            <p className="font-body text-sm" style={{ color: COLORS.inkSoft }}>Not ready for an estimate? Send me a message and I'll get back to you.</p>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.ink }}>Your name</label>
+              <input type="text" className={inputCls} style={inputStyle} value={form.customerName} onChange={set("customerName")} placeholder="Jane Miller" autoComplete="name" />
+            </div>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.ink }}>Phone number</label>
+              <input type="tel" inputMode="tel" className={inputCls} style={inputStyle} value={form.phone} onChange={setPhone} placeholder="(555) 555-0100" autoComplete="tel" />
+            </div>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.ink }}>Email (optional)</label>
+              <input type="email" className={inputCls} style={inputStyle} value={form.email} onChange={set("email")} placeholder="jane@email.com" autoComplete="email" />
+            </div>
+            <div>
+              <label className={labelCls} style={{ color: COLORS.ink }}>Your question</label>
+              <textarea rows={5} className={inputCls} style={inputStyle} value={form.message} onChange={set("message")} placeholder="What can I help with?" />
+            </div>
+            {error && <p className="text-sm font-body" style={{ color: COLORS.stamp }}>{error}</p>}
+            <div className="flex gap-3 pt-1">
+              <button onClick={onBackToLanding} className="rounded-xl px-4 py-3 border flex items-center gap-1" style={{ borderColor: COLORS.line, color: COLORS.inkSoft }} aria-label="Back">
+                <ArrowLeft size={16} />
+              </button>
+              <button onClick={handleSubmit} disabled={submitting} className="flex-1 rounded-xl py-3 text-base font-display uppercase tracking-wide text-white flex items-center justify-center gap-2" style={{ background: COLORS.slate, opacity: submitting ? 0.7 : 1 }}>
+                {submitting ? <Loader2 size={18} className="animate-spin" /> : null} Send question
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LandingPage({ onChoose }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: COLORS.canvas }}>
@@ -5709,6 +5824,7 @@ function LandingPage({ onChoose }) {
       <div className="w-full max-w-sm flex flex-col gap-3">
         <ChoiceCard selected={false} onClick={() => onChoose("estimate")} icon={Sparkles} label="Get an Estimate" sub="Curious what it might cost" />
         <ChoiceCard selected={false} onClick={() => onChoose("dropoff")} icon={Package} label="Drop Off an Item" sub="It's at the door or will be soon" />
+        <ChoiceCard selected={false} onClick={() => onChoose("question")} icon={MessageCircle} label="Ask a Question" sub="Not ready for an estimate yet" />
       </div>
       <button onClick={() => onChoose("dashboard")} className="mt-10 font-body text-xs underline" style={{ color: COLORS.inkSoft }}>
         Business login
@@ -5778,6 +5894,7 @@ export default function AppRoot() {
   if (view === "landing") return <LandingPage onChoose={setView} />;
   if (view === "estimate") return <CustomerRequestForm initialRequestType="estimate" onBackToLanding={() => setView("landing")} />;
   if (view === "dropoff") return <CustomerRequestForm initialRequestType="dropoff" onBackToLanding={() => setView("landing")} />;
+  if (view === "question") return <QuestionForm onBackToLanding={() => setView("landing")} />;
   if (view === "dashboard") return <DashboardLogin onUnlock={() => setView("tracker")} onBack={() => setView("landing")} />;
   if (view === "tracker") return <InternalTracker />;
   return <LandingPage onChoose={setView} />;
