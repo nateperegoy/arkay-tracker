@@ -788,7 +788,7 @@ function FrameCalculator({ onUse, rates, frameColor, openSignal }) {
               <span className="font-semibold">{total} ft</span>
               {total > 0 && <span style={{ color: COLORS.inkSoft }}> · ${(total * frameRateFor(frameColor, rates)).toFixed(2).replace(/\.00$/, "")}</span>}
             </p>
-            <button type="button" disabled={total <= 0} onClick={() => onUse(total)} className="font-display text-xs uppercase tracking-wide underline disabled:opacity-40" style={{ color: COLORS.slate }}>
+            <button type="button" disabled={total <= 0} onClick={() => onUse(total, calc.filter((c) => c.total > 0).map((c) => `${c.q}x ${rows[calc.indexOf(c)].w}" x ${rows[calc.indexOf(c)].h}" (${c.feet} ft)`).join(", "))} className="font-display text-xs uppercase tracking-wide underline disabled:opacity-40" style={{ color: COLORS.slate }}>
               Use {total || ""} ft
             </button>
           </div>
@@ -807,7 +807,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && (initialData.patioHardwareQty || (initialData.patioHardwareExtra || []).length > 0)));
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [frameCalcSignal, setFrameCalcSignal] = useState(0);
-  const [showPickup, setShowPickup] = useState(!!(initialData && (initialData.pickupDate || initialData.pickupTimeNote || initialData.notes)));
+  const [showPickup, setShowPickup] = useState(!!(initialData && (initialData.pickupDate || initialData.pickupTimeNote)));
   const [showPayment, setShowPayment] = useState(!!(initialData && (initialData.paymentMethod || initialData.addToWave || initialData.reviewRequestSent)));
   const openFrameCalc = () => setFrameCalcSignal((n) => n + 1);
   // Number inputs otherwise let a scroll/trackpad gesture over a focused field silently change
@@ -1021,6 +1021,10 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             {STATUSES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
+        <div>
+          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Notes</label>
+          <textarea rows={3} className={inputCls} style={inputStyle} value={form.notes} onChange={set("notes")} placeholder="Screen mesh type, special instructions, etc." />
+        </div>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -1041,8 +1045,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
         </div>
         </div>
         <button type="button" onClick={() => setShowPickup((v) => !v)} className="flex items-center gap-1.5 text-sm font-body text-left" style={{ color: COLORS.slate }}>
-          {showPickup ? <ChevronUp size={14} /> : <ChevronDown size={14} />} Pickup &amp; notes
-          {!showPickup && (form.pickupDate || form.pickupTimeNote || form.notes) && <span className="text-xs" style={{ color: COLORS.inkSoft }}>· filled in</span>}
+          {showPickup ? <ChevronUp size={14} /> : <ChevronDown size={14} />} Pickup
+          {!showPickup && (form.pickupDate || form.pickupTimeNote) && <span className="text-xs" style={{ color: COLORS.inkSoft }}>· filled in</span>}
         </button>
         {showPickup && (
           <div className="space-y-2.5">
@@ -1055,10 +1059,6 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup time</label>
           <input type="text" className={inputCls} style={inputStyle} value={form.pickupTimeNote} onChange={set("pickupTimeNote")} placeholder="e.g. after 3pm" />
         </div>
-        </div>
-        <div>
-          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Notes</label>
-          <textarea rows={2} className={inputCls} style={inputStyle} value={form.notes} onChange={set("notes")} placeholder="Screen mesh type, special instructions, etc." />
         </div>
           </div>
         )}
@@ -1117,7 +1117,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
               </div>
             </div>
           )}
-          <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft) => setForm((f) => ({ ...f, frameFeet: String(ft) }))} />
+          <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft, summary) => setForm((f) => {
+            const kept = (f.notes || "").split("\n").filter((l) => !l.startsWith("Frame sizes:"));
+            const line = summary ? `Frame sizes: ${summary}` : "";
+            return { ...f, frameFeet: String(ft), notes: (line ? [...kept, line] : kept).join("\n").trim() };
+          })} />
           <div>
             <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showCustomScreen ? <X size={14} /> : <Plus size={14} />} Custom price for some screens
