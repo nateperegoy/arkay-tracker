@@ -528,6 +528,7 @@ const emptyForm = {
   frameColor: "White",
   frameColorOther: "",
   frameThickness: "None",
+  tabsSprings: "",
   screenHardwareItem: "",
   screenHardwareQty: "",
   screenHardwareUnitPrice: "",
@@ -1100,11 +1101,20 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <input type="text" className={inputCls} style={inputStyle} value={form.frameColorOther} onChange={set("frameColorOther")} placeholder="Describe color" />
           )}
           {(Number(form.frameFeet) > 0 || frameCalcSignal > 0) && (
-            <div>
-              <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame thickness</label>
-              <select className={inputCls} style={inputStyle} value={form.frameThickness} onChange={set("frameThickness")}>
-                {FRAME_THICKNESS_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3 items-start" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
+              <div>
+                <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame thickness</label>
+                <select className={inputCls} style={inputStyle} value={form.frameThickness} onChange={set("frameThickness")}>
+                  {FRAME_THICKNESS_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls} style={{ color: COLORS.inkSoft }}>Tabs/springs on</label>
+                <select className={inputCls} style={inputStyle} value={form.tabsSprings || ""} onChange={set("tabsSprings")}>
+                  <option value="">Select…</option>
+                  {TABS_SPRINGS_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
             </div>
           )}
           <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft) => setForm((f) => ({ ...f, frameFeet: String(ft) }))} />
@@ -1556,7 +1566,7 @@ function OrderViewModal({ order, rates, onClose, onEdit, onDelete, allOrders, on
                 {(order.customScreensExtra || []).map((c, i) => (
                   Number(c.qty) > 0 && <React.Fragment key={i}>{row(customScreenRowLabel(c.price), `${c.qty} @ $${c.price}/ea`)}</React.Fragment>
                 ))}
-                {row("Frame", `${order.frameFeet || 0} ft · ${order.frameColor || "White"}${order.frameThickness && order.frameThickness !== "None" ? ` · ${order.frameThickness}` : ""}`)}
+                {row("Frame", `${order.frameFeet || 0} ft · ${order.frameColor || "White"}${order.frameThickness && order.frameThickness !== "None" ? ` · ${order.frameThickness}` : ""}${order.tabsSprings ? ` · tabs/springs: ${order.tabsSprings.toLowerCase()}` : ""}`)}
               </>
             )}
             {Number(order.screenHardwareQty) > 0 && row(`${order.screenHardwareItem || "Hardware"} (${order.screenHardwareQty} @ $${order.screenHardwareUnitPrice || 0}/ea)`, formatMoney(Number(order.screenHardwareQty) * Number(order.screenHardwareUnitPrice || 0)))}
