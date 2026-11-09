@@ -2653,7 +2653,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                         Heads up — {sub.oversizedScreenCount > 0 ? `${sub.oversizedScreenCount} of these are` : "some of these may be"} larger than usual{sub.oversizedScreenWidth ? ` (${sub.oversizedScreenWidth}" wide)` : ` (35"+ wide)`}
                       </p>
                     )}
-                    {sub.frameFeet > 0 && <p>{sub.frameFeet} ft of frame — {sub.frameColor || "White"}, {sub.frameThickness || '5/16"'}</p>}
+                    {sub.frameFeet > 0 && <p>{sub.frameFeet} ft of frame — {sub.frameColor || "White"}, {sub.frameThickness || '5/16"'}{sub.frameTabsSprings ? `, tabs/springs: ${sub.frameTabsSprings.toLowerCase()}` : ""}</p>}
                     {sub.needsMeasuringGuide && <p style={{ color: COLORS.stamp }}>Requested a measuring guide — task added to your list</p>}
                     {sub.needsCustomScreens && sub.customScreenSets && sub.customScreenSets.length > 0 && (
                       <p>
@@ -4858,6 +4858,7 @@ const emptyRequestForm = {
   frameColor: "White",
   frameColorOther: "",
   frameThickness: THICKNESS_UNSURE,
+  frameTabsSprings: "Not sure",
   oversizedScreenWidth: "",
   isDroppingOffPatioScreen: false,
   patioScreenCount: "",
@@ -5029,6 +5030,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
       frameFeet: Number(form.frameFeet) || 0,
       frameColor: form.frameColor === "Other" ? (form.frameColorOther.trim() || "Other") : form.frameColor,
       frameThickness: form.frameThickness,
+      frameTabsSprings: form.frameTabsSprings,
       oversizedScreenWidth: form.oversizedScreenWidth,
       patioScreenCount: Number(form.patioScreenCount) || 0,
       patioScreenWidth: form.patioScreenWidth,
@@ -5343,6 +5345,12 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame thickness</label>
                             <select className={inputCls} style={inputStyle} value={form.frameThickness} onChange={set("frameThickness")}>
                               {REQUEST_FRAME_THICKNESSES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Tabs and springs go on (if you know)</label>
+                            <select className={inputCls} style={inputStyle} value={form.frameTabsSprings} onChange={set("frameTabsSprings")}>
+                              {TABS_SPRINGS_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
                           </div>
                         </div>
@@ -6282,6 +6290,7 @@ function InternalTracker() {
       frameColor: FRAME_COLORS.includes(sub.frameColor) ? sub.frameColor : (sub.frameColor || "White"),
       frameColorOther: FRAME_COLORS.includes(sub.frameColor) ? "" : (sub.frameColor || ""),
       frameThickness: sub.frameThickness || "None",
+      tabsSprings: sub.frameTabsSprings && sub.frameTabsSprings !== "Not sure" ? sub.frameTabsSprings : "",
       screenPrice: (sub.numScreens || 0) * rates.screen + (sub.hasOversizedScreens ? Number(sub.oversizedScreenCount) || 0 : 0) * rates.screenPremium + (sub.frameFeet || 0) * frameRateFor(sub.frameColor, rates),
       patioDoorCount: sub.patioScreenCount || 0, patioDoorPrice: (sub.patioScreenCount || 0) * rates.patioDoor,
       fullPatioReplacement: !!sub.fullDoorReplacement, fullPatioReplacementPrice: 0,
