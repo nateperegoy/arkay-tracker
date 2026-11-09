@@ -713,6 +713,90 @@ function autoPatioPrice(form, rates) {
   return standard + custom + patioHardwareTotal(form);
 }
 
+// Parses inches typed as 35, 35.5, 35 1/2 or 35-1/2 (blank/invalid -> 0).
+function parseInches(raw) {
+  const t = String(raw || "").trim().replace(/-/g, " ");
+  if (!t) return 0;
+  const m = t.match(/^(\d+(?:\.\d+)?)(?:\s+(\d+)\/(\d+))?$/) || t.match(/^(\d+)\/(\d+)$/);
+  if (!m) return 0;
+  if (m.length === 3 && t.includes("/") && !t.includes(" ")) return Number(m[1]) / (Number(m[2]) || 1);
+  return Number(m[1]) + (m[2] ? Number(m[2]) / (Number(m[3]) || 1) : 0);
+}
+
+// Each side is rounded UP to the next whole foot on its own, then the four sides are added
+// (not the total rounded once): e.g. 35" x 47" -> 3 + 3 + 4 + 4 = 14 ft.
+function framePerimeterFeet(w, h) {
+  const wi = parseInches(w), hi = parseInches(h);
+  if (wi <= 0 || hi <= 0) return { wFt: 0, hFt: 0, total: 0 };
+  const wFt = Math.ceil(wi / 12 - 1e-9), hFt = Math.ceil(hi / 12 - 1e-9);
+  return { wFt, hFt, total: 2 * wFt + 2 * hFt };
+}
+
+function FrameCalculator({ onUse, rates, frameColor, openSignal }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { if (openSignal) setOpen(true); }, [openSignal]);
+  const [rows, setRows] = useState([{ qty: "1", w: "", h: "" }]);
+  const inputCls = "w-full rounded-md border px-2 py-2 text-sm font-body bg-white";
+  const inputStyle = { borderColor: COLORS.line, color: COLORS.ink };
+  const calc = rows.map((r) => {
+    const p = framePerimeterFeet(r.w, r.h);
+    const q = Math.max(0, Math.floor(Number(r.qty) || 0));
+    return { ...p, q, feet: p.total * q };
+  });
+  const total = calc.reduce((a, c) => a + c.feet, 0);
+  const update = (i, key) => (e) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [key]: e.target.value } : r)));
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-sm font-body text-left" style={{ color: COLORS.slate }}>
+        {open ? <X size={14} /> : <Plus size={14} />} Frame calculator
+      </button>
+      {open && (
+        <div className="rounded-md border p-3 mt-2 space-y-2" style={{ borderColor: COLORS.line, background: COLORS.canvasDark }}>
+          <p className="text-xs font-body" style={{ color: COLORS.inkSoft }}>Inches. Each side rounds up to the next foot, then the four sides are added.</p>
+          {rows.map((r, i) => (
+            <div key={i}>
+              <div className="grid grid-cols-[3.5rem_1fr_1fr_auto] gap-2 items-end">
+                <div>
+                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Qty</label>}
+                  <input type="number" inputMode="numeric" min="1" className={inputCls} style={inputStyle} value={r.qty} onChange={update(i, "qty")} />
+                </div>
+                <div>
+                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Width</label>}
+                  <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.w} onChange={update(i, "w")} placeholder='35 1/2' />
+                </div>
+                <div>
+                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Height</label>}
+                  <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.h} onChange={update(i, "h")} placeholder="47" />
+                </div>
+                {rows.length > 1 ? (
+                  <button type="button" aria-label="Remove frame" onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))} className="pb-2" style={{ color: COLORS.inkSoft }}><X size={16} /></button>
+                ) : <span className="w-4" />}
+              </div>
+              {calc[i].total > 0 && (
+                <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>
+                  {calc[i].wFt} + {calc[i].wFt} + {calc[i].hFt} + {calc[i].hFt} = {calc[i].total} ft{calc[i].q > 1 ? ` × ${calc[i].q} = ${calc[i].feet} ft` : ""}
+                </p>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={() => setRows((rs) => [...rs, { qty: "1", w: "", h: "" }])} className="flex items-center gap-1 text-xs font-body" style={{ color: COLORS.slate }}>
+            <Plus size={12} /> Add another size
+          </button>
+          <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: COLORS.line }}>
+            <p className="font-body text-sm" style={{ color: COLORS.ink }}>
+              <span className="font-semibold">{total} ft</span>
+              {total > 0 && <span style={{ color: COLORS.inkSoft }}> · ${(total * frameRateFor(frameColor, rates)).toFixed(2).replace(/\.00$/, "")}</span>}
+            </p>
+            <button type="button" disabled={total <= 0} onClick={() => onUse(total)} className="font-display text-xs uppercase tracking-wide underline disabled:opacity-40" style={{ color: COLORS.slate }}>
+              Use {total || ""} ft
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrders }) {
   const [form, setForm] = useState(() => (initialData ? { ...emptyForm, ...initialData } : emptyForm));
   const [error, setError] = useState("");
@@ -721,6 +805,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const [showScreenHardware, setShowScreenHardware] = useState(!!(initialData && (initialData.screenHardwareQty || (initialData.screenHardwareExtra || []).length > 0)));
   const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && (initialData.patioHardwareQty || (initialData.patioHardwareExtra || []).length > 0)));
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [frameCalcSignal, setFrameCalcSignal] = useState(0);
+  const openFrameCalc = () => setFrameCalcSignal((n) => n + 1);
   // Number inputs otherwise let a scroll/trackpad gesture over a focused field silently change
   // its value while the person is just trying to scroll the page — blur on wheel to stop that.
   const blurOnWheel = (e) => e.target.blur();
@@ -980,18 +1066,19 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame color</label>
-              <select className={inputCls} style={inputStyle} value={form.frameColor} onChange={set("frameColor")}>
+              <select className={inputCls} style={inputStyle} value={form.frameColor} onFocus={openFrameCalc} onChange={(e) => { openFrameCalc(); set("frameColor")(e); }}>
                 {FRAME_COLORS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame ft</label>
-              <input type="number" inputMode="decimal" min="0" step="0.5" className={inputCls} style={inputStyle} value={form.frameFeet} onChange={set("frameFeet")} />
+              <input type="number" inputMode="decimal" min="0" step="0.5" className={inputCls} style={inputStyle} value={form.frameFeet} onFocus={openFrameCalc} onChange={set("frameFeet")} />
             </div>
           </div>
           {form.frameColor === "Other" && (
             <input type="text" className={inputCls} style={inputStyle} value={form.frameColorOther} onChange={set("frameColorOther")} placeholder="Describe color" />
           )}
+          <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft) => setForm((f) => ({ ...f, frameFeet: String(ft) }))} />
           {Number(form.frameFeet) > 0 && (
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame thickness</label>
