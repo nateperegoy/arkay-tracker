@@ -1071,19 +1071,19 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <p className="font-display text-sm uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <Layers size={13} color={COLORS.ink} /> Window Screens
           </p>
-          <div className="grid grid-cols-2 gap-3 items-end" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
+          <div className="grid grid-cols-2 gap-3 items-start" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
           <div>
-            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Window Screen</label>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
           </div>
           <div>
-            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Large Window Screen ({LARGE_SCREEN_LABEL})</label>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Large</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreensPremium} onChange={set("numScreensPremium")} />
-            {Number(form.numScreensPremium) > 0 && (
-              <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>Large screens are ${rates.screenPremium} each.</p>
-            )}
           </div>
           </div>
+          {Number(form.numScreensPremium) > 0 && (
+            <p className="text-xs font-body -mt-1" style={{ color: COLORS.inkSoft }}>Large = {LARGE_SCREEN_LABEL}, ${rates.screenPremium} each.</p>
+          )}
           <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame color</label>
