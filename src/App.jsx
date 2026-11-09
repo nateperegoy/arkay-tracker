@@ -820,6 +820,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
 
   // Choosing Ready for Pickup here stamps today as the completion date, same as moving an order
   // to Ready from a card or the board.
+  // Payment Info is collapsed by default, but opens itself once the job reaches a payment-time status.
+  useEffect(() => {
+    if (["ready", "picked_up", "closed"].includes(form.status)) setShowPayment(true);
+  }, [form.status]);
+
   const setStatus = (e) => {
     const value = e.target.value;
     setForm((f) => ({ ...f, status: value, completionDate: value === "ready" && f.status !== "ready" ? todayISO() : f.completionDate }));
