@@ -1099,8 +1099,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           {form.frameColor === "Other" && (
             <input type="text" className={inputCls} style={inputStyle} value={form.frameColorOther} onChange={set("frameColorOther")} placeholder="Describe color" />
           )}
-          <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft) => setForm((f) => ({ ...f, frameFeet: String(ft) }))} />
-          {Number(form.frameFeet) > 0 && (
+          {(Number(form.frameFeet) > 0 || frameCalcSignal > 0) && (
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame thickness</label>
               <select className={inputCls} style={inputStyle} value={form.frameThickness} onChange={set("frameThickness")}>
@@ -1108,6 +1107,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
               </select>
             </div>
           )}
+          <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft) => setForm((f) => ({ ...f, frameFeet: String(ft) }))} />
           <div>
             <button type="button" onClick={() => setShowCustomScreen((v) => !v)} className="flex items-start gap-1.5 text-sm font-body mt-1 text-left" style={{ color: COLORS.slate }}>
               {showCustomScreen ? <X size={14} /> : <Plus size={14} />} Custom price for some screens
