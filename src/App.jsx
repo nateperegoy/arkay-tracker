@@ -966,9 +966,9 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const labelCls = "block text-xs font-body font-semibold mb-1";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* CUSTOMER INFO */}
-      <div className="rounded-2xl p-4 space-y-3" style={{ background: COLORS.canvasDark }}>
+      <div className="rounded-2xl p-3 space-y-2.5" style={{ background: COLORS.canvasDark }}>
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Customer Info</p>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Customer name</label>
@@ -1005,7 +1005,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
       </div>
 
       {/* JOB STATUS */}
-      <div className="rounded-2xl p-4 space-y-3" style={{ background: COLORS.canvasDark }}>
+      <div className="rounded-2xl p-3 space-y-2.5" style={{ background: COLORS.canvasDark }}>
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Job Status</p>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Status</label>
@@ -1022,6 +1022,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           />
           <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Rush Order — move to top of queue</span>
         </label>
+        <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Drop-off date</label>
           <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
@@ -1030,13 +1031,16 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Completion date</label>
           <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.completionDate} onChange={setCompletionDate} />
         </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup date</label>
           <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.pickupDate} onChange={set("pickupDate")} />
         </div>
         <div>
-          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup time (if they mentioned one)</label>
-          <input type="text" className={inputCls} style={inputStyle} value={form.pickupTimeNote} onChange={set("pickupTimeNote")} placeholder="e.g. around 3pm, after work" />
+          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup time</label>
+          <input type="text" className={inputCls} style={inputStyle} value={form.pickupTimeNote} onChange={set("pickupTimeNote")} placeholder="e.g. after 3pm" />
+        </div>
         </div>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Notes</label>
@@ -1045,13 +1049,14 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
       </div>
 
       {/* JOB INFO */}
-      <div className="rounded-2xl p-4 space-y-4" style={{ background: COLORS.canvasDark }}>
+      <div className="rounded-2xl p-3 space-y-3" style={{ background: COLORS.canvasDark }}>
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Job Details</p>
 
         <div className="space-y-3">
           <p className="font-display text-sm uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <Layers size={13} color={COLORS.ink} /> Window Screens
           </p>
+          <div className="grid grid-cols-2 gap-3 items-start">
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Window Screen</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
@@ -1062,6 +1067,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             {Number(form.numScreensPremium) > 0 && (
               <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>Large screens are ${rates.screenPremium} each.</p>
             )}
+          </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1329,13 +1335,27 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
       </div>
 
       {/* PAYMENT INFO */}
-      <div className="rounded-2xl p-4 space-y-3" style={{ background: COLORS.canvasDark }}>
+      <div className="rounded-2xl p-3 space-y-2.5" style={{ background: COLORS.canvasDark }}>
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Payment Info</p>
-        <div>
-          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Payment method</label>
-          <select className={inputCls} style={inputStyle} value={form.paymentMethod} onChange={set("paymentMethod")}>
-            {PAYMENT_METHODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Payment method</label>
+            <select className={inputCls} style={inputStyle} value={form.paymentMethod} onChange={set("paymentMethod")}>
+              {PAYMENT_METHODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} style={{ color: COLORS.inkSoft }}>Review request</label>
+            <select
+              className={inputCls}
+              style={inputStyle}
+              value={form.reviewRequestSent ? "complete" : "not_yet"}
+              onChange={(e) => setForm((f) => ({ ...f, reviewRequestSent: e.target.value === "complete" }))}
+            >
+              <option value="not_yet">Not sent yet</option>
+              <option value="complete">Complete</option>
+            </select>
+          </div>
         </div>
         {["venmo", "zelle", "check"].includes(form.paymentMethod) && (
           <label className="flex items-center gap-2 cursor-pointer">
@@ -1348,18 +1368,6 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Added invoice to Wave</span>
           </label>
         )}
-        <div>
-          <label className={labelCls} style={{ color: COLORS.inkSoft }}>Review request sent</label>
-          <select
-            className={inputCls}
-            style={inputStyle}
-            value={form.reviewRequestSent ? "complete" : "not_yet"}
-            onChange={(e) => setForm((f) => ({ ...f, reviewRequestSent: e.target.value === "complete" }))}
-          >
-            <option value="not_yet">Not sent yet</option>
-            <option value="complete">Complete</option>
-          </select>
-        </div>
       </div>
 
       {form.isRush && rushSurcharge > 0 && (
