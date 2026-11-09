@@ -806,6 +806,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
   const [showPatioHardware, setShowPatioHardware] = useState(!!(initialData && (initialData.patioHardwareQty || (initialData.patioHardwareExtra || []).length > 0)));
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [frameCalcSignal, setFrameCalcSignal] = useState(0);
+  const [showPickup, setShowPickup] = useState(!!(initialData && (initialData.pickupDate || initialData.pickupTimeNote || initialData.notes)));
+  const [showPayment, setShowPayment] = useState(!!(initialData && (initialData.paymentMethod || initialData.addToWave || initialData.reviewRequestSent)));
   const openFrameCalc = () => setFrameCalcSignal((n) => n + 1);
   // Number inputs otherwise let a scroll/trackpad gesture over a focused field silently change
   // its value while the person is just trying to scroll the page — blur on wheel to stop that.
@@ -1032,6 +1034,12 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left", minWidth: 0, maxWidth: "100%", WebkitAppearance: "none", appearance: "none", height: "2.5rem" }} value={form.completionDate} onChange={setCompletionDate} />
         </div>
         </div>
+        <button type="button" onClick={() => setShowPickup((v) => !v)} className="flex items-center gap-1.5 text-sm font-body text-left" style={{ color: COLORS.slate }}>
+          {showPickup ? <ChevronUp size={14} /> : <ChevronDown size={14} />} Pickup &amp; notes
+          {!showPickup && (form.pickupDate || form.pickupTimeNote || form.notes) && <span className="text-xs" style={{ color: COLORS.inkSoft }}>· filled in</span>}
+        </button>
+        {showPickup && (
+          <div className="space-y-2.5">
         <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup date</label>
@@ -1046,6 +1054,8 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Notes</label>
           <textarea rows={2} className={inputCls} style={inputStyle} value={form.notes} onChange={set("notes")} placeholder="Screen mesh type, special instructions, etc." />
         </div>
+          </div>
+        )}
       </div>
 
       {/* JOB INFO */}
@@ -1336,7 +1346,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
 
       {/* PAYMENT INFO */}
       <div className="rounded-2xl p-3 space-y-2.5" style={{ background: COLORS.canvasDark }}>
-        <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Payment Info</p>
+        <button type="button" onClick={() => setShowPayment((v) => !v)} className="w-full flex items-center justify-between" aria-expanded={showPayment}>
+          <span className="font-display text-sm uppercase tracking-wide" style={{ color: COLORS.ink }}>Payment Info</span>
+          {showPayment ? <ChevronUp size={16} color={COLORS.inkSoft} /> : <ChevronDown size={16} color={COLORS.inkSoft} />}
+        </button>
+        {showPayment && (<>
         <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Payment method</label>
@@ -1368,6 +1382,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Added invoice to Wave</span>
           </label>
         )}
+        </>)}
       </div>
 
       {form.isRush && rushSurcharge > 0 && (
