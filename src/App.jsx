@@ -1022,20 +1022,20 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           />
           <span className="font-body text-xs font-semibold" style={{ color: COLORS.inkSoft }}>Rush Order — move to top of queue</span>
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Drop-off date</label>
-          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
+          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left", minWidth: 0, maxWidth: "100%", WebkitAppearance: "none", appearance: "none", height: "2.5rem" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
         </div>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Completion date</label>
-          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.completionDate} onChange={setCompletionDate} />
+          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left", minWidth: 0, maxWidth: "100%", WebkitAppearance: "none", appearance: "none", height: "2.5rem" }} value={form.completionDate} onChange={setCompletionDate} />
         </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup date</label>
-          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.pickupDate} onChange={set("pickupDate")} />
+          <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left", minWidth: 0, maxWidth: "100%", WebkitAppearance: "none", appearance: "none", height: "2.5rem" }} value={form.pickupDate} onChange={set("pickupDate")} />
         </div>
         <div>
           <label className={labelCls} style={{ color: COLORS.inkSoft }}>Pickup time</label>
@@ -1056,7 +1056,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
           <p className="font-display text-sm uppercase tracking-wide flex items-center gap-1.5" style={{ color: COLORS.ink }}>
             <Layers size={13} color={COLORS.ink} /> Window Screens
           </p>
-          <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="grid grid-cols-2 gap-3 items-end" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Standard Window Screen</label>
             <input type="number" inputMode="numeric" min="0" className={inputCls} style={inputStyle} value={form.numScreens} onChange={set("numScreens")} />
@@ -1069,7 +1069,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
             )}
           </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
             <div>
               <label className={labelCls} style={{ color: COLORS.inkSoft }}>Frame color</label>
               <select className={inputCls} style={inputStyle} value={form.frameColor} onFocus={openFrameCalc} onChange={(e) => { openFrameCalc(); set("frameColor")(e); }}>
@@ -1337,7 +1337,7 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
       {/* PAYMENT INFO */}
       <div className="rounded-2xl p-3 space-y-2.5" style={{ background: COLORS.canvasDark }}>
         <p className="font-display text-sm uppercase tracking-wide mb-1" style={{ color: COLORS.ink }}>Payment Info</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
           <div>
             <label className={labelCls} style={{ color: COLORS.inkSoft }}>Payment method</label>
             <select className={inputCls} style={inputStyle} value={form.paymentMethod} onChange={set("paymentMethod")}>
@@ -5125,7 +5125,7 @@ function CustomerRequestForm({ initialRequestType, onBackToLanding }) {
                   {form.requestType === "dropoff" && (
                     <div>
                       <label className={labelCls} style={{ color: COLORS.inkSoft }}>Date of drop off</label>
-                      <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
+                      <input type="date" className={inputCls} style={{ ...inputStyle, textAlign: "left", minWidth: 0, maxWidth: "100%", WebkitAppearance: "none", appearance: "none", height: "2.5rem" }} value={form.dropOffDate} onChange={set("dropOffDate")} />
                     </div>
                   )}
                 </div>
