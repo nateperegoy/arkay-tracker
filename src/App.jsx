@@ -733,54 +733,79 @@ function framePerimeterFeet(w, h) {
   return { wFt, hFt, total: 2 * wFt + 2 * hFt };
 }
 
+const SIXTEENTHS_LABELS = ["0", "1/16", "1/8", "3/16", "1/4", "5/16", "3/8", "7/16", "1/2", "9/16", "5/8", "11/16", "3/4", "13/16", "7/8", "15/16"];
+const sizeInches = (whole, sixteenths) => (parseInches(whole) || 0) + (Number(sixteenths) || 0) / 16;
+const sizeLabel = (whole, sixteenths) => {
+  const w = String(whole || "0").trim() || "0";
+  const f = Number(sixteenths) || 0;
+  return f ? `${w === "0" ? "" : w + " "}${SIXTEENTHS_LABELS[f]}"` : `${w}"`;
+};
+
 function FrameCalculator({ onUse, rates, frameColor, openSignal }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (openSignal) setOpen(true); }, [openSignal]);
-  const [rows, setRows] = useState([{ qty: "1", w: "", h: "" }]);
+  const blank = { qty: "1", w: "", wf: "0", h: "", hf: "0" };
+  const [rows, setRows] = useState([{ ...blank }]);
   const inputCls = "w-full rounded-md border px-2 py-2 text-sm font-body bg-white";
   const inputStyle = { borderColor: COLORS.line, color: COLORS.ink };
+  const lblCls = "block text-[10px] font-display uppercase tracking-wide mb-1";
+  const grid2 = { gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" };
   const calc = rows.map((r) => {
-    const p = framePerimeterFeet(r.w, r.h);
+    const p = framePerimeterFeet(sizeInches(r.w, r.wf), sizeInches(r.h, r.hf));
     const q = Math.max(0, Math.floor(Number(r.qty) || 0));
     return { ...p, q, feet: p.total * q };
   });
   const total = calc.reduce((a, c) => a + c.feet, 0);
   const update = (i, key) => (e) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [key]: e.target.value } : r)));
+  const fracSelect = (i, key) => (
+    <select className={inputCls} style={inputStyle} value={rows[i][key]} onChange={update(i, key)} aria-label="Fraction of an inch">
+      {SIXTEENTHS_LABELS.map((l, n) => <option key={n} value={n}>{l}</option>)}
+    </select>
+  );
   return (
     <div>
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-sm font-body text-left" style={{ color: COLORS.slate }}>
         {open ? <X size={14} /> : <Plus size={14} />} Frame calculator
       </button>
       {open && (
-        <div className="rounded-md border p-3 mt-2 space-y-2" style={{ borderColor: COLORS.line, background: COLORS.canvasDark }}>
-          <p className="text-xs font-body" style={{ color: COLORS.inkSoft }}>Inches. Each side rounds up to the next foot, then the four sides are added.</p>
+        <div className="rounded-md border p-3 mt-2 space-y-3" style={{ borderColor: COLORS.line, background: COLORS.canvasDark }}>
+          <p className="text-xs font-body" style={{ color: COLORS.inkSoft }}>Inches plus a fraction (down to 1/16). Each side rounds up to the next foot, then the four sides are added.</p>
           {rows.map((r, i) => (
-            <div key={i}>
-              <div className="grid grid-cols-[3.5rem_1fr_1fr_auto] gap-2 items-end">
-                <div>
-                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Qty</label>}
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-end gap-2">
+                <div className="w-14">
+                  <label className={lblCls} style={{ color: COLORS.inkSoft }}>Qty</label>
                   <input type="number" inputMode="numeric" min="1" className={inputCls} style={inputStyle} value={r.qty} onChange={update(i, "qty")} />
                 </div>
-                <div>
-                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Width</label>}
-                  <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.w} onChange={update(i, "w")} placeholder='35 1/2' />
+                <div className="flex-1 min-w-0">
+                  <label className={lblCls} style={{ color: COLORS.inkSoft }}>Width</label>
+                  <div className="grid gap-1.5" style={grid2}>
+                    <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.w} onChange={update(i, "w")} placeholder="in" />
+                    {fracSelect(i, "wf")}
+                  </div>
                 </div>
-                <div>
-                  {i === 0 && <label className="block text-[10px] font-display uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft }}>Height</label>}
-                  <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.h} onChange={update(i, "h")} placeholder="47" />
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="w-14 text-right pb-2 text-xs font-body" style={{ color: COLORS.inkSoft }}>x</div>
+                <div className="flex-1 min-w-0">
+                  <label className={lblCls} style={{ color: COLORS.inkSoft }}>Height</label>
+                  <div className="grid gap-1.5" style={grid2}>
+                    <input type="text" inputMode="decimal" className={inputCls} style={inputStyle} value={r.h} onChange={update(i, "h")} placeholder="in" />
+                    {fracSelect(i, "hf")}
+                  </div>
                 </div>
                 {rows.length > 1 ? (
                   <button type="button" aria-label="Remove frame" onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))} className="pb-2" style={{ color: COLORS.inkSoft }}><X size={16} /></button>
                 ) : <span className="w-4" />}
               </div>
               {calc[i].total > 0 && (
-                <p className="text-xs font-body mt-1" style={{ color: COLORS.inkSoft }}>
-                  {calc[i].wFt} + {calc[i].wFt} + {calc[i].hFt} + {calc[i].hFt} = {calc[i].total} ft{calc[i].q > 1 ? ` × ${calc[i].q} = ${calc[i].feet} ft` : ""}
+                <p className="text-xs font-body" style={{ color: COLORS.inkSoft }}>
+                  {sizeLabel(r.w, r.wf)} x {sizeLabel(r.h, r.hf)}: {calc[i].wFt} + {calc[i].wFt} + {calc[i].hFt} + {calc[i].hFt} = {calc[i].total} ft{calc[i].q > 1 ? ` x ${calc[i].q} = ${calc[i].feet} ft` : ""}
                 </p>
               )}
             </div>
           ))}
-          <button type="button" onClick={() => setRows((rs) => [...rs, { qty: "1", w: "", h: "" }])} className="flex items-center gap-1 text-xs font-body" style={{ color: COLORS.slate }}>
+          <button type="button" onClick={() => setRows((rs) => [...rs, { ...blank }])} className="flex items-center gap-1 text-xs font-body" style={{ color: COLORS.slate }}>
             <Plus size={12} /> Add another size
           </button>
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: COLORS.line }}>
@@ -788,7 +813,7 @@ function FrameCalculator({ onUse, rates, frameColor, openSignal }) {
               <span className="font-semibold">{total} ft</span>
               {total > 0 && <span style={{ color: COLORS.inkSoft }}> · ${(total * frameRateFor(frameColor, rates)).toFixed(2).replace(/\.00$/, "")}</span>}
             </p>
-            <button type="button" disabled={total <= 0} onClick={() => onUse(total, calc.filter((c) => c.total > 0).map((c) => `${c.q}x ${rows[calc.indexOf(c)].w}" x ${rows[calc.indexOf(c)].h}" (${c.feet} ft)`).join(", "))} className="font-display text-xs uppercase tracking-wide underline disabled:opacity-40" style={{ color: COLORS.slate }}>
+            <button type="button" disabled={total <= 0} onClick={() => onUse(total, rows.map((r, n) => (calc[n].total > 0 ? `${calc[n].q}x ${sizeLabel(r.w, r.wf)} x ${sizeLabel(r.h, r.hf)} (${calc[n].feet} ft)` : "")).filter(Boolean).join(", "))} className="font-display text-xs uppercase tracking-wide underline disabled:opacity-40" style={{ color: COLORS.slate }}>
               Use {total || ""} ft
             </button>
           </div>
