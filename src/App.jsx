@@ -99,7 +99,7 @@ const HUES = {
 const STATUSES = [
   { id: "new_order", label: "New Order", ...HUES.blue },
   { id: "in_progress", label: "In Progress", ...HUES.purple },
-  { id: "waiting_parts", label: "Waiting on Parts", ...HUES.orange },
+  { id: "waiting_parts", label: "Waiting", ...HUES.orange },
   { id: "ready", label: "Ready for Pickup", ...HUES.green },
   { id: "picked_up", label: "Picked Up", ...HUES.pink },
   { id: "closed", label: "Closed", ...HUES.gray },
@@ -196,7 +196,7 @@ function getActionReasons(o, todayStr) {
   // threshold is tuned for regular parts, not a full door's genuinely longer normal turnaround.
   if (o.status === "waiting_parts" && !o.fullPatioReplacement) {
     const days = daysBetween(o.dropOffDate, todayStr);
-    if (days >= WAITING_PARTS_STALE_DAYS) reasons.push(`Waiting on parts ${days}d`);
+    if (days >= WAITING_PARTS_STALE_DAYS) reasons.push(`Waiting ${days}d`);
   }
   // Final Steps to Close already catches this for Picked Up orders — but once something
   // is actually Closed (including via the "mark it anyway" override), nothing else ever
@@ -486,7 +486,7 @@ const TASK_TAGS = {
 };
 
 function tagForActionReason(reason) {
-  if (reason.includes("Waiting on parts")) return TASK_TAGS.partsFollowUp;
+  if (reason.includes("Waiting ")) return TASK_TAGS.partsFollowUp;
   if (reason.includes("Metro Screenworks")) return TASK_TAGS.metro;
   if (reason.includes("Sitting unreviewed")) return TASK_TAGS.needsReview;
   if (reason.includes("Review request not sent")) return TASK_TAGS.sendReview;
@@ -2216,7 +2216,7 @@ function PriorityDashboard({ orders, rates, onEdit, onDelete, onStatusChange, on
       {waiting.length > 0 && (
         <div className="rounded-lg border bg-white p-4" style={{ borderColor: COLORS.line }}>
           <p className="text-xs font-display uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: COLORS.inkSoft }}>
-            <Clock size={13} color={HUES.orange.color} /> Waiting on parts (not prioritized)
+            <Clock size={13} color={HUES.orange.color} /> Waiting (not prioritized)
           </p>
           <div>{waiting.map((o) => <React.Fragment key={o.id}>{Row({ order: o, muted: true })}</React.Fragment>)}</div>
         </div>
