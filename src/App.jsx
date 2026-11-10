@@ -143,6 +143,15 @@ function isThicknessUnknown(t) {
   return !t || t === "None" || t === "TBD" || t === THICKNESS_UNSURE;
 }
 
+// What the Inbox shows as missing: Closed and Picked Up are skipped entirely. New Orders are
+// normally skipped too (they haven't been reviewed yet), except an unknown frame thickness,
+// which is flagged right away so it's chased before the order is built.
+function getInboxMissing(o) {
+  if (o.status === "closed" || o.status === "picked_up") return [];
+  if (o.status === "new_order") return getMissingDetails(o).filter((m) => m === "frame thickness");
+  return getMissingDetails(o);
+}
+
 function getMissingDetails(o) {
   const missing = [];
   if (o.fullPatioReplacement && o.metroStatus === "ordered" && !o.subcontractorOrderedDate && !o.subcontractorJobNumber) {
@@ -2561,7 +2570,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
   // can never disagree. Picked Up orders get their own rich row below instead of a duplicate
   // compact tag here.
   const missingDetails = orders
-    .filter((o) => o.status !== "closed" && o.status !== "new_order" && o.status !== "picked_up" && getMissingDetails(o).length > 0)
+    .filter((o) => getInboxMissing(o).length > 0)
     .sort((a, b) => (a.dropOffDate < b.dropOffDate ? -1 : a.dropOffDate > b.dropOffDate ? 1 : 0));
   const missingMonths = getMissingExpenseMonths(monthlyExpenses);
   const needsAction = orders
@@ -3107,7 +3116,7 @@ function RequestsPanel({ submissions, orders, onImport, onDismiss, onEditOrder, 
                       <p className="font-display text-sm truncate" style={{ color: COLORS.ink }}>{order.customerName}</p>
                       <PhoneLink phone={order.phone} className="font-body text-xs underline" />
                     </div>
-                    <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{getMissingDetails(order).join(", ")}</span>
+                    <span className="font-body text-xs" style={{ color: COLORS.inkSoft }}>{getInboxMissing(order).join(", ") || getMissingDetails(order).join(", ")}</span>
                     <button onClick={() => setViewingOrder(order)} className="p-1 rounded hover:bg-black/5" aria-label="View order details" title="View order">
                       <Eye size={14} color={COLORS.inkSoft} />
                     </button>
@@ -6407,7 +6416,7 @@ function InternalTracker() {
         </div>
         <div className="max-w-6xl mx-auto px-4 flex flex-wrap gap-1.5 pb-2">
           {[
-            { id: "requests", label: "Inbox", icon: Inbox, badge: loading ? 0 : (getMissingTimeLogDays(timeLogs).length > 0 ? 1 : 0) + getMissingExpenseMonths(monthlyExpenses).length + submissions.length + orders.filter((o) => o.status === "picked_up").length + orders.filter((o) => o.status !== "closed" && o.status !== "new_order" && o.status !== "picked_up" && getMissingDetails(o).length > 0).length + orders.filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0).length + manualTasks.length },
+            { id: "requests", label: "Inbox", icon: Inbox, badge: loading ? 0 : (getMissingTimeLogDays(timeLogs).length > 0 ? 1 : 0) + getMissingExpenseMonths(monthlyExpenses).length + submissions.length + orders.filter((o) => o.status === "picked_up").length + orders.filter((o) => getInboxMissing(o).length > 0).length + orders.filter((o) => o.status !== "picked_up" && getActionReasons(o, todayISO()).length > 0).length + manualTasks.length },
             { id: "board", label: "Dashboard", icon: Gauge },
             { id: "dashboard", label: "Jobs", icon: ListChecks },
             { id: "pickup", label: "Ready", icon: PackageCheck, badge: orders.filter((o) => o.status === "ready" && o.pickupDate === todayISO()).length },
