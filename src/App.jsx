@@ -138,6 +138,11 @@ function frameRateFor(frameColor, rates) {
 // tier switched on but left at $0 (an easy typo), missing contact info, or the one original
 // Metro Screenworks case. Shared between the Inbox display and the Inbox badge count so
 // they can never disagree with each other.
+// A custom frame whose thickness hasn't been pinned down yet (blank, "None", "TBD" or "I'm not sure").
+function isThicknessUnknown(t) {
+  return !t || t === "None" || t === "TBD" || t === THICKNESS_UNSURE;
+}
+
 function getMissingDetails(o) {
   const missing = [];
   if (o.fullPatioReplacement && o.metroStatus === "ordered" && !o.subcontractorOrderedDate && !o.subcontractorJobNumber) {
@@ -152,6 +157,7 @@ function getMissingDetails(o) {
   if (Number(o.numPatioCustom) > 0 && !(Number(o.customPatioPrice) > 0)) {
     missing.push("custom patio price");
   }
+  if (Number(o.frameFeet) > 0 && isThicknessUnknown(o.frameThickness)) missing.push("frame thickness");
   if (!o.customerName || !o.customerName.trim()) missing.push("customer name");
   if (!o.phone || !o.phone.trim()) missing.push("phone number");
   return missing;
@@ -1141,6 +1147,11 @@ function OrderForm({ initialData, onSubmit, onCancel, submitLabel, rates, allOrd
                 </select>
               </div>
             </div>
+          )}
+          {Number(form.frameFeet) > 0 && isThicknessUnknown(form.frameThickness) && (
+            <p className="text-xs font-body rounded-md px-2.5 py-1.5" style={{ background: "#FBEFD5", color: "#7A5300" }}>
+              Frame thickness unknown. This order will be flagged in your Inbox until you set it.
+            </p>
           )}
           <FrameCalculator openSignal={frameCalcSignal} rates={rates} frameColor={form.frameColor} onUse={(ft, summary) => setForm((f) => {
             const kept = (f.notes || "").split("\n").filter((l) => !l.startsWith("Frame sizes:"));
